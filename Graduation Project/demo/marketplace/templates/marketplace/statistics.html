@@ -1,0 +1,244 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}数据统计 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4">📊 数据统计仪表板</h2>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">商品总数</h5>
+                    <h2 class="card-text" id="total-products">-</h2>
+                    <small>可交易: <span id="available-products">-</span></small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">用户总数</h5>
+                    <h2 class="card-text" id="total-users">-</h2>
+                    <small>活跃用户: <span id="active-users">-</span></small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title">交易总数</h5>
+                    <h2 class="card-text" id="total-transactions">-</h2>
+                    <small>已完成: <span id="completed-transactions">-</span></small>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">交易总额</h5>
+                    <h2 class="card-text">¥<span id="total-amount">-</span></h2>
+                    <small>已完成交易</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📈 最近7天交易趋势</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="transactionTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📦 商品分类分布</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 商品状况分布</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="conditionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">💰 交易状态分布</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="transactionStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/statistics/data/')
+        .then(response => response.json())
+        .then(data => {
+            updateStatistics(data);
+            createCharts(data);
+        })
+        .catch(error => console.error('Error:', error));
+});
+
+function updateStatistics(data) {
+    document.getElementById('total-products').textContent = data.products.total;
+    document.getElementById('available-products').textContent = data.products.available;
+    
+    document.getElementById('total-users').textContent = data.users.total;
+    document.getElementById('active-users').textContent = data.users.active;
+    
+    document.getElementById('total-transactions').textContent = data.transactions.total;
+    document.getElementById('completed-transactions').textContent = data.transactions.completed;
+    
+    document.getElementById('total-amount').textContent = data.transactions.total_amount.toLocaleString('zh-CN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function createCharts(data) {
+    const trendCtx = document.getElementById('transactionTrendChart').getContext('2d');
+    new Chart(trendCtx, {
+        type: 'line',
+        data: {
+            labels: data.trend.dates,
+            datasets: [{
+                label: '交易数量',
+                data: data.trend.counts,
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: true
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'doughnut',
+        data: {
+            labels: data.categories.map(c => c.name),
+            datasets: [{
+                data: data.categories.map(c => c.count),
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(54, 162, 235, 0.8)',
+                    'rgba(255, 206, 86, 0.8)',
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(153, 102, 255, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+    
+    const conditionCtx = document.getElementById('conditionChart').getContext('2d');
+    new Chart(conditionCtx, {
+        type: 'bar',
+        data: {
+            labels: Object.keys(data.conditions),
+            datasets: [{
+                label: '商品数量',
+                data: Object.values(data.conditions),
+                backgroundColor: 'rgba(54, 162, 235, 0.8)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+    
+    const statusCtx = document.getElementById('transactionStatusChart').getContext('2d');
+    const statusData = [
+        data.products.available,
+        data.products.sold,
+        data.products.total - data.products.available - data.products.sold
+    ];
+    new Chart(statusCtx, {
+        type: 'pie',
+        data: {
+            labels: ['可交易', '已售出', '其他'],
+            datasets: [{
+                data: statusData,
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.8)',
+                    'rgba(255, 99, 132, 0.8)',
+                    'rgba(255, 206, 86, 0.8)'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

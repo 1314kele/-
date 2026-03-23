@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}钱包提现 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-white">
+                    <h4 class="mb-0">💸 钱包提现</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">提现金额</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="amount" 
+                                   name="amount" 
+                                   min="0.01" 
+                                   step="0.01" 
+                                   placeholder="请输入提现金额" 
+                                   required>
+                            <div class="form-text">
+                                当前可提现余额：¥{{ wallet.balance }}
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <strong>注意事项：</strong>
+                            <ul class="mb-0">
+                                <li>提现金额必须大于0元且不超过当前余额</li>
+                                <li>提现申请提交后，金额将从余额中扣除</li>
+                                <li>提现需要管理员审核，审核通过后款项将转入您的账户</li>
+                                <li>如有疑问，请联系客服</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-warning btn-lg">
+                                确认提现
+                            </button>
+                            <a href="{% url 'wallet_view' %}" class="btn btn-secondary">
+                                返回钱包
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

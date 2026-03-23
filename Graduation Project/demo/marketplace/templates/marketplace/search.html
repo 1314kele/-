@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}商品搜索 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4>搜索结果</h4>
+                <span class="text-muted">找到 {{ products.count }} 个商品</span>
+            </div>
+            
+            {% if products %}
+                <div class="row">
+                    {% for product in products %}
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 product-card">
+                            {% if product.image %}
+                            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.title }}" style="height: 200px; object-fit: cover;">
+                            {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <span class="text-muted">暂无图片</span>
+                            </div>
+                            {% endif %}
+                            
+                            <div class="card-body">
+                                <h5 class="card-title">{{ product.title }}</h5>
+                                <p class="card-text text-truncate">{{ product.description }}</p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="text-primary fw-bold">¥{{ product.price }}</span>
+                                    <small class="text-muted">{{ product.get_condition_display }}</small>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">
+                                        <i class="bi bi-eye"></i> {{ product.views }} 次浏览
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="card-footer bg-white">
+                                <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-primary btn-sm w-100">
+                                    查看详情
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <div class="mb-3">
+                        <i class="bi bi-search" style="font-size: 4rem; color: #dee2e6;"></i>
+                    </div>
+                    <h4>没有找到相关商品</h4>
+                    <p class="text-muted">试试调整搜索条件或浏览其他分类</p>
+                    <a href="{% url 'product_list' %}" class="btn btn-primary">
+                        浏览所有商品
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.product-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const suggestionsContainer = document.createElement('div');
+    suggestionsContainer.className = 'list-group position-absolute w-100 shadow';
+    suggestionsContainer.style.zIndex = '1000';
+    suggestionsContainer.style.display = 'none';
+    suggestionsContainer.style.maxHeight = '300px';
+    suggestionsContainer.style.overflowY = 'auto';
+    
+    searchInput.parentNode.style.position = 'relative';
+    searchInput.parentNode.appendChild(suggestionsContainer);
+    
+    let debounceTimer;
+    
+    searchInput.addEventListener('input', function() {
+        clearTimeout(debounceTimer);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            suggestionsContainer.style.display = 'none';
+            return;
+        }
+        
+        debounceTimer = setTimeout(() => {
+            fetch(`/search/suggestions/?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.suggestions && data.suggestions.length > 0) {
+                        suggestionsContainer.innerHTML = data.suggestions.map(item => `
+                            <a href="/products/${item.id}/" class="list-group-item list-group-item-action">
+                                <div class="d-flex align-items-center">
+                                    ${item.image ? `<img src="${item.image}" class="me-2" style="width: 40px; height: 40px; object-fit: cover;">` : ''}
+                                    <div>
+                                        <div class="fw-bold">${item.title}</div>
+                                        <small class="text-muted">¥${item.price}</small>
+                                    </div>
+                                </div>
+                            </a>
+                        `).join('');
+                        suggestionsContainer.style.display = 'block';
+                    } else {
+                        suggestionsContainer.style.display = 'none';
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }, 300);
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!suggestionsContainer.contains(e.target) && e.target !== searchInput) {
+            suggestionsContainer.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

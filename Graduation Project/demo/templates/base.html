@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>
+        {% block title %}
+        校园二手交易平台
+        {% endblock %}
+    </title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+    {% load static %}
+    <link href="{% static 'css/campus-pink-theme.css' %}" rel="stylesheet" />
+    {% block extra_css %}
+
+    {% endblock %}
+    <style>
+        /* 确保Bootstrap样式不会冲突 */
+        .navbar, .container, .row, .col {
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* 热门推荐项悬停效果 */
+        .recommend-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+  <body>
+    <!-- 头部导航栏 -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <div class="logo-icon">旧</div>
+                <span>旧遇</span>
+            </div>
+        </div>
+        <div class="header-right">
+            {% if user.is_authenticated %}
+                <div class="user-dropdown">
+                    <button class="login-btn dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        <i class="fas fa-user"></i> {{ user.username }}
+                        <i class="fas fa-chevron-down" style="margin-left: 4px; font-size: 0.75rem;"></i>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{% url 'favorite_list' %}"><i class="fas fa-heart"></i> 我的收藏</a></li>
+                        <li><a class="dropdown-item" href="{% url 'message_list' %}"><i class="fas fa-envelope"></i> 我的消息</a></li>
+                        <li><a class="dropdown-item" href="{% url 'wallet_view' %}"><i class="fas fa-wallet"></i> 我的钱包</a></li>
+                        <li><a class="dropdown-item" href="{% url 'order_management' %}"><i class="fas fa-list-alt"></i> 订单管理</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="fas fa-sign-out-alt"></i> 退出登录</a></li>
+                    </ul>
+                </div>
+            {% else %}
+                <a href="{% url 'login' %}" class="login-btn">登录/注册</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- 消息提示 -->
+    <div class="container mt-3">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <!-- 主要内容布局 -->
+    <div class="main-layout">
+        <!-- 左侧分类导航 -->
+        <div class="sidebar-left">
+            <!-- 功能按钮区域 -->
+            <div class="function-buttons">
+                <div class="category-title">
+                    <i class="fas fa-rocket"></i> 快捷功能
+                </div>
+                <div class="button-grid">
+                    <a href="{% url 'home' %}" class="func-btn {% if request.path == '/' %}active{% endif %}">
+                        <i class="fas fa-home"></i>
+                        <span>首页</span>
+                    </a>
+                    <a href="{% url 'product_list' %}" class="func-btn {% if 'products' in request.path %}active{% endif %}">
+                        <i class="fas fa-shopping-bag"></i>
+                        <span>全部商品</span>
+                    </a>
+                    {% if user.is_authenticated %}
+                    <a href="{% url 'add_product' %}" class="func-btn {% if 'add' in request.path %}active{% endif %}">
+                        <i class="fas fa-plus-circle"></i>
+                        <span>发布商品</span>
+                    </a>
+                    <a href="{% url 'favorite_list' %}" class="func-btn {% if 'favorite' in request.path %}active{% endif %}">
+                        <i class="fas fa-heart"></i>
+                        <span>我的收藏</span>
+                        {% if user_favorite_count > 0 %}
+                        <span class="badge-count">{{ user_favorite_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'message_list' %}" class="func-btn {% if 'message' in request.path %}active{% endif %}">
+                        <i class="fas fa-envelope"></i>
+                        <span>我的消息</span>
+                        {% if user_message_count > 0 %}
+                        <span class="badge-count">{{ user_message_count }}</span>
+                        {% endif %}
+                    </a>
+                    <a href="{% url 'wallet_view' %}" class="func-btn {% if 'wallet' in request.path %}active{% endif %}">
+                        <i class="fas fa-wallet"></i>
+                        <span>我的钱包</span>
+                    </a>
+                    {% else %}
+                    <a href="{% url 'login' %}" class="func-btn">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>登录</span>
+                    </a>
+                    <a href="{% url 'register' %}" class="func-btn">
+                        <i class="fas fa-user-plus"></i>
+                        <span>注册</span>
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'map_view' %}" class="func-btn {% if 'map' in request.path %}active{% endif %}">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <span>商品地图</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- 商品分类区域 -->
+            <div class="category-section">
+                <div class="category-title">
+                    <i class="fas fa-th-large"></i> 商品分类
+                </div>
+                <ul class="category-list">
+                    <li class="category-item">
+                        <a href="{% url 'product_list' %}" class="category-link {% if request.path == '/products/' %}active{% endif %}">
+                            <i class="fas fa-list"></i> 全部商品
+                        </a>
+                    </li>
+                    {% for category in global_categories %}
+                    <li class="category-item">
+                        <a href="{% url 'category_products' category.id %}" class="category-link {% if current_category_id == category.id %}active{% endif %}">
+                            <i class="fas fa-tag"></i> {{ category.name }}
+                        </a>
+                    </li>
+                    {% empty %}
+                    <li class="category-item">
+                        <span class="category-link text-muted">暂无分类</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- 系统功能区域 -->
+            <div class="system-functions">
+                <div class="category-title">
+                    <i class="fas fa-cog"></i> 系统功能
+                </div>
+                <ul class="category-list">
+                    <li class="category-item">
+                        <a href="javascript:void(0);" class="category-link" id="toggle-advanced-search">
+                            <i class="fas fa-search"></i> 高级搜索
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="{% url 'notification_list' %}" class="category-link {% if 'notification' in request.path %}active{% endif %}">
+                            <i class="fas fa-bell"></i> 通知中心
+                        </a>
+                    </li>
+                    {% if user.is_staff %}
+                    <li class="category-item">
+                        <a href="{% url 'statistics_dashboard' %}" class="category-link {% if 'statistics' in request.path %}active{% endif %}">
+                            <i class="fas fa-chart-bar"></i> 数据统计
+                        </a>
+                    </li>
+                    <li class="category-item">
+                        <a href="{% url 'behavior_analysis_dashboard' %}" class="category-link {% if 'behavior' in request.path %}active{% endif %}">
+                            <i class="fas fa-brain"></i> 行为分析
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% if user.is_superuser %}
+                    <li class="category-item">
+                        <a href="/admin/" target="_blank" class="category-link">
+                            <i class="fas fa-cogs"></i> 管理后台
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+
+        <!-- 中间商品区域 -->
+        <div class="main-content">
+            <!-- 搜索栏 -->
+            <div class="search-section">
+                <i class="fas fa-search text-gray-400"></i>
+                <form action="{% url 'search_products' %}" method="GET" style="flex: 1; display: flex; gap: var(--space-3);">
+                    <input type="search" name="query" placeholder="搜索课本/数码/服饰..." class="search-input">
+                    <button type="submit" class="search-btn" id="quick-search-btn">
+                        <i class="fas fa-search"></i> 搜索商品
+                    </button>
+                </form>
+            </div>
+
+            <!-- 高级搜索组件（默认隐藏） -->
+            <div class="advanced-search-container" id="advanced-search-panel" style="display: none;">
+                <div class="card" style="border: 1px solid var(--gray-200); border-radius: var(--radius-lg); box-shadow: var(--shadow-sm); margin-top: var(--space-4);">
+                    <div class="card-header" style="background: var(--pink-primary); color: var(--white); border-radius: var(--radius-lg) var(--radius-lg) 0 0; display: flex; justify-content: space-between; align-items: center;">
+                        <h5 class="mb-0"><i class="fas fa-search" style="margin-right: 8px;"></i> 高级搜索</h5>
+                        <button type="button" class="btn-close" id="close-advanced-search" style="background: var(--white); opacity: 0.8;"></button>
+                    </div>
+                    <div class="card-body">
+                        <form method="GET" action="{% url 'search_products' %}" id="advanced-search-form">
+                            <div class="mb-3" style="position: relative;">
+                                <label for="advanced-search-input" class="form-label" style="color: var(--gray-700); font-weight: 500;">关键词</label>
+                                <input type="text" name="query" class="form-control" placeholder="搜索商品..." id="advanced-search-input" maxlength="200" style="border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 8px 12px; font-size: 0.875rem;">
+                                <div class="list-group position-absolute w-100 shadow" style="z-index: 1000; display: none; max-height: 300px; overflow-y: auto; background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-md);"></div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="advanced-category" class="form-label" style="color: var(--gray-700); font-weight: 500;">分类</label>
+                                <select name="category" class="form-select" id="advanced-category" style="border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 8px 12px; font-size: 0.875rem;">
+                                    <option value="" selected>所有分类</option>
+                                    {% for category in global_categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label for="advanced-min-price" class="form-label" style="color: var(--gray-700); font-weight: 500;">最低价格</label>
+                                    <input type="number" name="min_price" class="form-control" placeholder="最低价格" min="0" step="any" id="advanced-min-price" style="border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 8px 12px; font-size: 0.875rem;">
+                                </div>
+                                <div class="col-6">
+                                    <label for="advanced-max-price" class="form-label" style="color: var(--gray-700); font-weight: 500;">最高价格</label>
+                                    <input type="number" name="max_price" class="form-control" placeholder="最高价格" min="0" step="any" id="advanced-max-price" style="border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 8px 12px; font-size: 0.875rem;">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="advanced-condition" class="form-label" style="color: var(--gray-700); font-weight: 500;">商品状况</label>
+                                <select name="condition" class="form-select" id="advanced-condition" style="border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 8px 12px; font-size: 0.875rem;">
+                                    <option value="" selected>所有状况</option>
+                                    <option value="new">全新</option>
+                                    <option value="like_new">几乎全新</option>
+                                    <option value="good">良好</option>
+                                    <option value="fair">一般</option>
+                                    <option value="poor">较差</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="advanced-sort-by" class="form-label" style="color: var(--gray-700); font-weight: 500;">排序方式</label>
+                                <select name="sort_by" class="form-select" id="advanced-sort-by" style="border: 1px solid var(--gray-300); border-radius: var(--radius-md); padding: 8px 12px; font-size: 0.875rem;">
+                                    <option value="" selected>默认排序</option>
+                                    <option value="price_asc">价格从低到高</option>
+                                    <option value="price_desc">价格从高到低</option>
+                                    <option value="views">浏览量</option>
+                                    <option value="created_at">发布时间</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn w-100" style="background: var(--pink-primary); color: var(--white); border: none; border-radius: var(--radius-md); padding: 10px 16px; font-size: 0.875rem; font-weight: 500; transition: all var(--transition-fast);">
+                                <i class="fas fa-search" style="margin-right: 6px;"></i> 搜索
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 商品内容区域 -->
+            {% block content %}
+
+            {% endblock %}
+        </div>
+
+        <!-- 右侧热门推荐 -->
+        <div class="sidebar-right">
+            <!-- 热门推荐 -->
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <span>热门推荐</span>
+                    <a href="{% url 'product_list' %}" style="font-size: 0.75rem; color: var(--pink-primary); text-decoration: none;">更多</a>
+                </div>
+                <ul class="recommend-list">
+                    {% for item in hot_recommendations %}
+                    <li class="recommend-item" style="cursor: pointer; transition: all 0.2s ease;" onclick="window.location.href = '{{ item.url }}'" title="浏览量: {{ item.views }} | 收藏: {{ item.favorite_count }} | 热度: {{ item.score }}">
+                        <div class="recommend-icon">
+                            {% if item.category == '电子产品' %}
+                                <i class="fas fa-mobile-alt"></i>
+                            {% elif item.category == '图书教材' %}
+                                <i class="fas fa-book"></i>
+                            {% elif item.category == '生活用品' %}
+                                <i class="fas fa-home"></i>
+                            {% elif item.category == '服装鞋帽' %}
+                                <i class="fas fa-tshirt"></i>
+                            {% elif item.category == '运动户外' %}
+                                <i class="fas fa-running"></i>
+                            {% elif item.category == '美妆护肤' %}
+                                <i class="fas fa-magic"></i>
+                            {% else %}
+                                <i class="fas fa-tag"></i>
+                            {% endif %}
+                        </div>
+                        <div class="recommend-text">
+                            <div style="font-weight: 500; color: var(--gray-800);">{{ item.title|truncatechars:12 }}</div>
+                            <div style="font-size: 0.75rem; color: var(--pink-primary); font-weight: 600;">¥{{ item.price }}</div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="recommend-item">
+                        <div class="recommend-text text-muted">
+                            暂无热门推荐
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- 猜你喜欢 -->
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <span>猜你喜欢</span>
+                    <a href="{% url 'product_list' %}" style="font-size: 0.75rem; color: var(--pink-primary); text-decoration: none;">更多</a>
+                </div>
+                <ul class="recommend-list">
+                    {% for item in user_recommendations %}
+                    <li class="recommend-item" style="cursor: pointer; transition: all 0.2s ease;" onclick="window.location.href = '{{ item.url }}'" title="浏览量: {{ item.views }} | 收藏: {{ item.favorite_count }} | 卖家信用: {{ item.seller_credit }}分">
+                        <div class="recommend-icon">
+                            {% if item.category == '电子产品' %}
+                                <i class="fas fa-mobile-alt"></i>
+                            {% elif item.category == '图书教材' %}
+                                <i class="fas fa-book"></i>
+                            {% elif item.category == '生活用品' %}
+                                <i class="fas fa-home"></i>
+                            {% elif item.category == '服装鞋帽' %}
+                                <i class="fas fa-tshirt"></i>
+                            {% elif item.category == '运动户外' %}
+                                <i class="fas fa-running"></i>
+                            {% elif item.category == '美妆护肤' %}
+                                <i class="fas fa-magic"></i>
+                            {% else %}
+                                <i class="fas fa-heart"></i>
+                            {% endif %}
+                        </div>
+                        <div class="recommend-text">
+                            <div style="font-weight: 500; color: var(--gray-800);">{{ item.title|truncatechars:12 }}</div>
+                            <div style="font-size: 0.75rem; color: var(--pink-primary); font-weight: 600;">¥{{ item.price }}</div>
+                            {% if item.reason %}
+                            <div style="font-size: 0.65rem; color: var(--gray-500); margin-top: 2px; line-height: 1.2;">
+                                <i class="fas fa-lightbulb" style="margin-right: 2px;"></i>{{ item.reason }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="recommend-item">
+                        <div class="recommend-text text-muted">
+                            暂无推荐
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <!-- 校园公告 -->
+            <div class="sidebar-section">
+                <div class="section-title">
+                    <span>校园公告</span>
+                </div>
+                <ul class="recommend-list">
+                    <li class="recommend-item">
+                        <div class="recommend-icon">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        <div class="recommend-text">
+                            校园公告
+                        </div>
+                    </li>
+                    <li class="recommend-item">
+                        <div class="recommend-icon">
+                            <i class="fas fa-bullhorn"></i>
+                        </div>
+                        <div class="recommend-text">
+                            校园公告
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页脚 -->
+    <footer class="footer" style="background: var(--white); box-shadow: var(--shadow-md); margin-top: var(--space-8);">
+      <div class="container text-center">
+        <p>&copy; 2024 校园二手交易平台. 版权所有.</p>
+        <p class="text-muted">让闲置物品找到新主人，共建绿色校园</p>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}
+
+    {% endblock %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const advancedSearchPanel = document.getElementById('advanced-search-panel');
+            const toggleAdvancedSearch = document.getElementById('toggle-advanced-search');
+            const closeAdvancedSearch = document.getElementById('close-advanced-search');
+            const quickSearchBtn = document.getElementById('quick-search-btn');
+            
+            let isAdvancedSearchVisible = false;
+            
+            if (toggleAdvancedSearch) {
+                toggleAdvancedSearch.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    isAdvancedSearchVisible = !isAdvancedSearchVisible;
+                    
+                    if (isAdvancedSearchVisible) {
+                        advancedSearchPanel.style.display = 'block';
+                        toggleAdvancedSearch.classList.add('active');
+                    } else {
+                        advancedSearchPanel.style.display = 'none';
+                        toggleAdvancedSearch.classList.remove('active');
+                    }
+                });
+            }
+            
+            if (closeAdvancedSearch) {
+                closeAdvancedSearch.addEventListener('click', function() {
+                    isAdvancedSearchVisible = false;
+                    advancedSearchPanel.style.display = 'none';
+                    toggleAdvancedSearch.classList.remove('active');
+                });
+            }
+            
+            if (quickSearchBtn) {
+                quickSearchBtn.addEventListener('click', function() {
+                    isAdvancedSearchVisible = false;
+                    advancedSearchPanel.style.display = 'none';
+                    toggleAdvancedSearch.classList.remove('active');
+                });
+            }
+        });
+    </script>
+  </body>
+</html>

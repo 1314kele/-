@@ -1,0 +1,436 @@
+{% extends 'base.html' %}
+
+{% block title %}商品列表 - 校园二手交易平台{% endblock %}
+
+{% block extra_css %}
+<style>
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-6);
+    padding: var(--space-4);
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.pagination {
+    display: flex;
+    gap: var(--space-1);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.page-item {
+    list-style: none;
+}
+
+.page-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    background: var(--white);
+    color: var(--gray-700);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+    font-size: 0.875rem;
+}
+
+.page-link:hover {
+    background: var(--pink-light);
+    color: var(--pink-primary);
+    border-color: var(--pink-primary);
+}
+
+.page-item.active .page-link {
+    background: var(--pink-primary);
+    color: var(--white);
+    border-color: var(--pink-primary);
+}
+
+.page-info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 0 var(--space-3);
+    color: var(--gray-600);
+    font-size: 0.875rem;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-fast);
+}
+
+.loading-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--pink-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.product-card {
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-lg);
+}
+
+.product-image {
+    position: relative;
+    overflow: hidden;
+}
+
+.product-image img {
+    transition: transform var(--transition-fast);
+}
+
+.product-card:hover .product-image img {
+    transform: scale(1.05);
+}
+
+.lazy-image {
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.lazy-image.loaded {
+    opacity: 1;
+}
+
+.image-placeholder {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.image-placeholder i {
+    font-size: 2rem;
+    color: var(--gray-300);
+}
+
+@media (max-width: 768px) {
+    .pagination {
+        gap: 4px;
+    }
+    
+    .page-link {
+        min-width: 36px;
+        height: 36px;
+        padding: 0 8px;
+        font-size: 0.8125rem;
+    }
+    
+    .page-info {
+        font-size: 0.8125rem;
+        padding: 0 var(--space-2);
+    }
+}
+
+@media (max-width: 480px) {
+    .pagination-container {
+        padding: var(--space-3);
+        gap: var(--space-1);
+    }
+    
+    .page-link {
+        min-width: 32px;
+        height: 32px;
+        padding: 0 6px;
+        font-size: 0.75rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>商品列表</h2>
+    {% if user.is_authenticated %}
+    <a href="{% url 'add_product' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> 发布商品
+    </a>
+    {% endif %}
+</div>
+
+<!-- 筛选和排序 -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4">
+                <form action="{% url 'product_list' %}" method="get" class="d-flex" id="search-form">
+                    <input type="text" name="q" class="form-control me-2" placeholder="搜索商品..." value="{{ query|default:'' }}">
+                    <button type="submit" class="btn btn-outline-primary">搜索</button>
+                </form>
+            </div>
+            <div class="col-md-8">
+                <div class="d-flex">
+                    <select class="form-select me-2" onchange="location = this.value;">
+                        <option value="{% url 'product_list' %}?status=all">所有状态</option>
+                        <option value="{% url 'product_list' %}?status=available" {% if status_filter == 'available' %}selected{% endif %}>可交易</option>
+                        <option value="{% url 'product_list' %}?status=reserved" {% if status_filter == 'reserved' %}selected{% endif %}>已预订</option>
+                        <option value="{% url 'product_list' %}?status=sold" {% if status_filter == 'sold' %}selected{% endif %}>已售出</option>
+                    </select>
+                    <select class="form-select me-2" onchange="location = this.value;">
+                        <option value="{% url 'product_list' %}?status={{ status_filter }}">所有分类</option>
+                        {% for category in categories %}
+                        <option value="{% url 'product_list' %}?category={{ category.id }}&status={{ status_filter }}" 
+                                {% if selected_category and selected_category.id == category.id %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <select class="form-select" onchange="location = this.value;">
+                        <option value="{% url 'product_list' %}?sort=-created_at&status={{ status_filter }}">最新发布</option>
+                        <option value="{% url 'product_list' %}?sort=price&status={{ status_filter }}" {% if sort_by == 'price' %}selected{% endif %}>价格从低到高</option>
+                        <option value="{% url 'product_list' %}?sort=-price&status={{ status_filter }}" {% if sort_by == '-price' %}selected{% endif %}>价格从高到低</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 商品列表 -->
+<div class="row" id="product-list">
+    {% for product in products %}
+    <div class="col-md-6 col-lg-4 col-xl-3 mb-4">
+        <div class="card product-card h-100">
+            <div class="product-image">
+                {% if product.image %}
+                <div class="image-placeholder">
+                    <i class="fas fa-image"></i>
+                </div>
+                <img src="{{ product.image.url }}" 
+                     class="card-img-top lazy-image" 
+                     alt="{{ product.title }}" 
+                     style="height: 200px; object-fit: cover;"
+                     loading="lazy"
+                     data-src="{{ product.image.url }}">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <i class="fas fa-image fa-3x text-muted"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-body d-flex flex-column">
+                <h6 class="card-title">{{ product.title }}</h6>
+                <p class="card-text text-muted small">{{ product.description|truncatechars:60 }}</p>
+                <div class="mt-auto">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="price">¥{{ product.price }}</span>
+                        <span class="badge bg-secondary condition-badge">{{ product.get_condition_display }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        {% if product.status == 'available' %}
+                            <span class="badge bg-success">可交易</span>
+                        {% elif product.status == 'reserved' %}
+                            <span class="badge bg-warning">已预订</span>
+                        {% elif product.status == 'sold' %}
+                            <span class="badge bg-danger">已售出</span>
+                        {% endif %}
+                        <span class="badge bg-info">{{ product.views }} 浏览</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">{{ product.seller.username }}</small>
+                        <small class="text-muted">{{ product.created_at|date:'m-d H:i' }}</small>
+                    </div>
+                </div>
+            </div>
+            <a href="{% url 'product_detail' product.id %}" class="stretched-link"></a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="text-center py-5">
+            <i class="fas fa-search fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">没有找到相关商品</h4>
+            <p class="text-muted">尝试调整搜索条件或发布新的商品</p>
+            {% if user.is_authenticated %}
+            <a href="{% url 'add_product' %}" class="btn btn-primary">发布商品</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 分页 -->
+{% if products.has_other_pages %}
+<div class="pagination-container">
+    <div class="page-info">
+        <span>第 {{ products.number }} 页</span>
+        <span>/</span>
+        <span>共 {{ products.paginator.num_pages }} 页</span>
+        <span>({{ products.paginator.count }} 个商品)</span>
+    </div>
+    
+    <ul class="pagination">
+        {% if products.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" title="首页">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ products.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" title="上一页">
+                <i class="fas fa-angle-left"></i>
+            </a>
+        </li>
+        {% endif %}
+        
+        {% for page_num in products.paginator.page_range %}
+        {% if page_num == products.number %}
+        <li class="page-item active">
+            <span class="page-link">{{ page_num }}</span>
+        </li>
+        {% elif page_num == 1 %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_num }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">{{ page_num }}</a>
+        </li>
+        {% elif page_num == products.paginator.num_pages %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_num }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">{{ page_num }}</a>
+        </li>
+        {% elif page_num > products.number|add:-3 and page_num < products.number|add:3 %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_num }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}">{{ page_num }}</a>
+        </li>
+        {% elif page_num == products.number|add:-3 or page_num == products.number|add:3 %}
+        <li class="page-item">
+            <span class="page-link">...</span>
+        </li>
+        {% endif %}
+        {% endfor %}
+        
+        {% if products.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ products.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" title="下一页">
+                <i class="fas fa-angle-right"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ products.paginator.num_pages }}{% if query %}&q={{ query }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}{% if selected_category %}&category={{ selected_category.id }}{% endif %}{% if sort_by %}&sort={{ sort_by }}{% endif %}" title="末页">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- 加载状态覆盖层 -->
+<div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 图片懒加载
+    const lazyImages = document.querySelectorAll('.lazy-image');
+    
+    const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                img.src = img.dataset.src;
+                img.classList.add('loaded');
+                
+                // 移除占位符
+                const placeholder = img.previousElementSibling;
+                if (placeholder && placeholder.classList.contains('image-placeholder')) {
+                    placeholder.style.display = 'none';
+                }
+                
+                observer.unobserve(img);
+            }
+        });
+    }, {
+        rootMargin: '50px 0px',
+        threshold: 0.01
+    });
+    
+    lazyImages.forEach(img => {
+        imageObserver.observe(img);
+    });
+    
+    // 分页链接点击时显示加载状态
+    const paginationLinks = document.querySelectorAll('.pagination a');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    
+    paginationLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            loadingOverlay.classList.add('active');
+        });
+    });
+    
+    // 筛选和排序时显示加载状态
+    const selectElements = document.querySelectorAll('select[onchange]');
+    selectElements.forEach(select => {
+        select.addEventListener('change', function() {
+            loadingOverlay.classList.add('active');
+        });
+    });
+    
+    // 搜索表单提交时显示加载状态
+    const searchForm = document.getElementById('search-form');
+    if (searchForm) {
+        searchForm.addEventListener('submit', function(e) {
+            loadingOverlay.classList.add('active');
+        });
+    }
+    
+    // 保存当前页码到 localStorage
+    const currentPage = new URLSearchParams(window.location.search).get('page') || '1';
+    localStorage.setItem('current_product_list_page', currentPage);
+    
+    // 如果没有页码参数，尝试从 localStorage 恢复
+    if (!new URLSearchParams(window.location.search).get('page')) {
+        const savedPage = localStorage.getItem('current_product_list_page');
+        if (savedPage && savedPage !== '1') {
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('page', savedPage);
+            window.location.href = currentUrl.toString();
+        }
+    }
+});
+</script>
+{% endblock %}

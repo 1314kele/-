@@ -1,0 +1,845 @@
+{% extends 'base.html' %}
+
+{% block title %}订单管理 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">
+        <i class="fas fa-shopping-cart me-2"></i>订单管理
+    </h2>
+    
+    <!-- 订单统计卡片 -->
+    <div class="row mb-4" id="orderStats">
+        <div class="col-md-3">
+            <div class="card text-center bg-primary text-white shadow-sm">
+                <div class="card-body">
+                    <div class="h1 mb-0"><i class="fas fa-clipboard-list"></i></div>
+                    <h5 class="mt-2">总订单数</h5>
+                    <p class="h3 mb-0" id="totalOrders">{{ stats.total|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-warning text-white shadow-sm">
+                <div class="card-body">
+                    <div class="h1 mb-0"><i class="fas fa-clock"></i></div>
+                    <h5 class="mt-2">待处理</h5>
+                    <p class="h3 mb-0" id="pendingOrders">{{ stats.pending|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-info text-white shadow-sm">
+                <div class="card-body">
+                    <div class="h1 mb-0"><i class="fas fa-check-circle"></i></div>
+                    <h5 class="mt-2">已确认</h5>
+                    <p class="h3 mb-0" id="confirmedOrders">{{ stats.confirmed|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white shadow-sm">
+                <div class="card-body">
+                    <div class="h1 mb-0"><i class="fas fa-star"></i></div>
+                    <h5 class="mt-2">已完成</h5>
+                    <p class="h3 mb-0" id="completedOrders">{{ stats.completed|default:0 }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 搜索和筛选区域 -->
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">
+                <i class="fas fa-filter me-2"></i>筛选条件
+            </h5>
+        </div>
+        <div class="card-body">
+            <form id="orderSearchForm">
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label for="orderId" class="form-label">订单编号</label>
+                        <input type="text" class="form-control" id="orderId" name="order_id" placeholder="输入订单ID">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="startDate" class="form-label">开始日期</label>
+                        <input type="date" class="form-control" id="startDate" name="start_date">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="endDate" class="form-label">结束日期</label>
+                        <input type="date" class="form-control" id="endDate" name="end_date">
+                    </div>
+                    <div class="col-md-2">
+                        <label for="orderStatus" class="form-label">订单状态</label>
+                        <select class="form-control" id="orderStatus" name="status">
+                            <option value="">全部状态</option>
+                            <option value="pending">待确认</option>
+                            <option value="confirmed">已确认</option>
+                            <option value="completed">已完成</option>
+                            <option value="cancelled">已取消</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="role" class="form-label">交易角色</label>
+                        <select class="form-control" id="role" name="role">
+                            <option value="">全部角色</option>
+                            <option value="buyer">买家</option>
+                            <option value="seller">卖家</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="pageSize" class="form-label">每页显示</label>
+                        <select class="form-control" id="pageSize" name="page_size">
+                            <option value="10">10条</option>
+                            <option value="20" selected>20条</option>
+                            <option value="50">50条</option>
+                            <option value="100">100条</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="searchKeyword" class="form-label">关键词搜索</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="searchKeyword" name="keyword" placeholder="搜索商品名称、描述或对方用户名">
+                            <button class="btn btn-outline-secondary" type="button" id="searchBtn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-end justify-content-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-filter me-1"></i>应用筛选
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="resetBtn">
+                            <i class="fas fa-sync-alt me-1"></i>重置
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- 加载状态 -->
+    <div id="loadingSpinner" class="text-center my-5 d-none">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">加载中...</span>
+        </div>
+        <p class="mt-2">正在加载订单数据...</p>
+    </div>
+    
+    <!-- 错误提示 -->
+    <div id="errorAlert" class="alert alert-danger d-none" role="alert">
+        <i class="fas fa-exclamation-circle"></i> <span id="errorMessage">加载失败，请稍后重试</span>
+    </div>
+    
+    <!-- 订单列表 -->
+    <div id="orderList" class="table-responsive">
+        <table class="table table-bordered table-hover">
+            <thead class="table-light">
+                <tr>
+                    <th>订单编号</th>
+                    <th>商品信息</th>
+                    <th>交易角色</th>
+                    <th>对方用户</th>
+                    <th>订单金额</th>
+                    <th>订单状态</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="orderTableBody">
+                <!-- 订单数据将通过AJAX加载 -->
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- 分页控件 -->
+    <nav aria-label="Page navigation" class="mt-4" id="paginationContainer">
+        <ul class="pagination justify-content-center" id="pagination">
+            <!-- 分页链接将通过AJAX加载 -->
+        </ul>
+    </nav>
+    
+    <!-- 订单详情模态框 -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderDetailModalLabel">订单详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" id="modalBody">
+                    <!-- 订单详情将通过AJAX加载 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // 全局变量
+    let currentPage = 1;
+    let currentFilters = {};
+    
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 页面加载时显示初始统计数据（从模板变量获取）
+        const initialStats = {
+            total: {{ stats.total|default:0 }},
+            pending: {{ stats.pending|default:0 }},
+            confirmed: {{ stats.confirmed|default:0 }},
+            completed: {{ stats.completed|default:0 }}
+        };
+        
+        // 加载订单数据
+        loadOrders();
+        
+        // 绑定搜索表单提交事件
+        document.getElementById('orderSearchForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            currentPage = 1;
+            loadOrders();
+        });
+        
+        // 绑定搜索按钮点击事件
+        document.getElementById('searchBtn').addEventListener('click', function() {
+            currentPage = 1;
+            loadOrders();
+        });
+        
+        // 绑定重置按钮事件
+        document.getElementById('resetBtn').addEventListener('click', function() {
+            document.getElementById('orderSearchForm').reset();
+            currentPage = 1;
+            loadOrders();
+        });
+        
+        // 绑定回车键搜索事件
+        document.getElementById('searchKeyword').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                currentPage = 1;
+                loadOrders();
+            }
+        });
+        
+        // 实时筛选：当筛选条件改变时，自动重新加载数据
+        const filterInputs = document.querySelectorAll('#orderSearchForm input, #orderSearchForm select');
+        filterInputs.forEach(input => {
+            input.addEventListener('change', function() {
+                currentPage = 1;
+                loadOrders();
+            });
+        });
+        
+        // 添加下拉菜单的键盘导航支持
+        document.querySelectorAll('.dropdown-menu').forEach(menu => {
+            menu.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    this.previousElementSibling.click();
+                }
+            });
+        });
+    });
+    
+    // 页面加载完成后初始化工具提示
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化所有工具提示
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        const tooltipList = tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
+    
+    // 加载订单数据
+    function loadOrders() {
+        // 显示加载状态
+        document.getElementById('loadingSpinner').classList.remove('d-none');
+        document.getElementById('orderList').classList.add('d-none');
+        document.getElementById('errorAlert').classList.add('d-none');
+        document.getElementById('paginationContainer').classList.add('d-none');
+        
+        // 获取搜索参数
+        const formData = new FormData(document.getElementById('orderSearchForm'));
+        const params = new URLSearchParams();
+        
+        formData.forEach((value, key) => {
+            if (value) {
+                params.append(key, value);
+            }
+        });
+        
+        params.append('page', currentPage);
+        
+        // 保存当前筛选条件
+        currentFilters = Object.fromEntries(params.entries());
+        
+        // 发送AJAX请求
+        fetch(`/orders/ajax/?${params.toString()}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // 更新订单统计数据
+                updateOrderStats(data.stats);
+                
+                // 渲染订单列表
+                renderOrders(data.orders);
+                
+                // 渲染分页
+                renderPagination(data.pagination);
+                
+                // 显示订单列表和分页
+                document.getElementById('orderList').classList.remove('d-none');
+                document.getElementById('paginationContainer').classList.remove('d-none');
+            } else {
+                showError(data.message || '加载失败');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading orders:', error);
+            showError('网络错误，请稍后重试');
+        })
+        .finally(() => {
+            // 隐藏加载状态
+            document.getElementById('loadingSpinner').classList.add('d-none');
+        });
+    }
+    
+    // 更新订单统计数据
+    function updateOrderStats(stats) {
+        document.getElementById('totalOrders').textContent = stats.total;
+        document.getElementById('pendingOrders').textContent = stats.pending;
+        document.getElementById('confirmedOrders').textContent = stats.confirmed;
+        document.getElementById('completedOrders').textContent = stats.completed;
+    }
+    
+    // 渲染订单列表
+    function renderOrders(orders) {
+        const tbody = document.getElementById('orderTableBody');
+        
+        if (orders.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center py-5">
+                        <div class="bg-light rounded-circle p-4 mb-3" style="width: 120px; height: 120px; display: inline-flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-inbox" style="font-size: 4rem; color: #ccc;"></i>
+                        </div>
+                        <h5 class="mt-2 text-muted">没有找到符合条件的订单</h5>
+                        <p class="text-secondary">请尝试调整筛选条件或搜索关键词</p>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+        
+        tbody.innerHTML = orders.map(order => {
+            // 获取状态对应的图标
+            let statusIcon = '';
+            if (order.status === 'pending') statusIcon = '<i class="fas fa-clock"></i>';
+            else if (order.status === 'confirmed') statusIcon = '<i class="fas fa-check-circle"></i>';
+            else if (order.status === 'completed') statusIcon = '<i class="fas fa-star"></i>';
+            else if (order.status === 'cancelled') statusIcon = '<i class="fas fa-times-circle"></i>';
+            
+            return `
+            <tr class="align-middle hover-shadow transition-all duration-200">
+                <td class="fw-bold text-primary">#${order.id}</td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0 me-3">
+                            <div class="rounded overflow-hidden border shadow-sm" style="width: 70px; height: 70px;">
+                                ${order.product_image ? 
+                                    `<img src="${order.product_image}" alt="${order.product_title}" width="100%" height="100%" class="object-fit-cover">` : 
+                                    '<div class="bg-light text-center p-3 d-flex align-items-center justify-content-center" style="width: 100%; height: 100%;"><i class="fas fa-box" style="font-size: 2rem; color: #ccc;"></i></div>'}
+                            </div>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1 fw-medium">${order.product_title}</h6>
+                            <small class="text-muted">商品ID: ${order.product_id}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge d-flex align-items-center gap-1 
+                        ${order.role === 'buyer' ? 'bg-primary' : 'bg-success'}">
+                        <i class="fas ${order.role === 'buyer' ? 'fa-shopping-cart' : 'fa-store'}"></i>
+                        ${order.role === 'buyer' ? '买家' : '卖家'}
+                    </span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-user-circle text-muted me-1"></i>
+                        <span>${order.other_user}</span>
+                    </div>
+                </td>
+                <td class="text-danger fw-bold fs-5">¥${order.price.toFixed(2)}</td>
+                <td>
+                    <span class="badge d-flex align-items-center gap-1 
+                        ${order.status === 'pending' ? 'bg-warning' : 
+                          order.status === 'confirmed' ? 'bg-info' : 
+                          order.status === 'completed' ? 'bg-success' : 'bg-danger'}">
+                        ${statusIcon}
+                        ${order.status_text}
+                    </span>
+                </td>
+                <td>
+                    <div class="text-sm">
+                        <div class="text-muted">${new Date(order.created_at).toLocaleDateString('zh-CN')}</div>
+                        <div class="text-secondary">${new Date(order.created_at).toLocaleTimeString('zh-CN')}</div>
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex gap-1">
+                        <button class="btn btn-sm btn-primary d-flex align-items-center gap-1" 
+                                onclick="viewOrderDetail(${order.id})" 
+                                title="查看详情" 
+                                data-bs-toggle="tooltip">
+                            <i class="fas fa-eye"></i>
+                            <span class="d-none d-md-inline">详情</span>
+                        </button>
+                        <a href="/transactions/${order.id}/" 
+                           class="btn btn-sm btn-secondary d-flex align-items-center gap-1" 
+                           title="详情页面" 
+                           data-bs-toggle="tooltip">
+                            <i class="fas fa-external-link-alt"></i>
+                            <span class="d-none d-md-inline">页面</span>
+                        </a>
+                    </div>
+                </td>
+            </tr>
+            `;
+        }).join('');
+    }
+    
+    // 渲染分页控件
+    function renderPagination(pagination) {
+        const paginationEl = document.getElementById('pagination');
+        let html = '';
+        
+        // 上一页按钮
+        html += `
+            <li class="page-item ${pagination.has_previous ? '' : 'disabled'}">
+                <a class="page-link rounded-start" href="#" onclick="goToPage(${pagination.previous_page_number || 1})" aria-label="Previous">
+                    <span aria-hidden="true"><i class="fas fa-chevron-left"></i></span>
+                </a>
+            </li>
+        `;
+        
+        // 页码按钮
+        pagination.page_range.forEach(page => {
+            html += `
+                <li class="page-item ${page === pagination.current_page ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="goToPage(${page})">${page}</a>
+                </li>
+            `;
+        });
+        
+        // 下一页按钮
+        html += `
+            <li class="page-item ${pagination.has_next ? '' : 'disabled'}">
+                <a class="page-link rounded-end" href="#" onclick="goToPage(${pagination.next_page_number || pagination.current_page})" aria-label="Next">
+                    <span aria-hidden="true"><i class="fas fa-chevron-right"></i></span>
+                </a>
+            </li>
+        `;
+        
+        // 添加分页信息
+        const paginationInfo = `
+            <div class="d-flex align-items-center ms-3">
+                <span class="text-muted text-sm">
+                    显示 ${(pagination.current_page - 1) * 20 + 1} - ${Math.min(pagination.current_page * 20, pagination.total_items)} 条，共 ${pagination.total_items} 条记录
+                </span>
+            </div>
+        `;
+        
+        paginationEl.innerHTML = html;
+        paginationEl.parentElement.innerHTML += paginationInfo;
+    }
+    
+    // 跳转到指定页码
+    function goToPage(page) {
+        if (page !== currentPage) {
+            currentPage = page;
+            loadOrders();
+        }
+    }
+    
+    // 查看订单详情
+    function viewOrderDetail(orderId) {
+        const modalBody = document.getElementById('modalBody');
+        modalBody.innerHTML = `
+            <div class="text-center my-5">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">加载中...</span>
+                </div>
+                <p class="mt-2">正在加载订单详情...</p>
+            </div>
+        `;
+        
+        // 显示模态框
+        const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+        modal.show();
+        
+        // 发送AJAX请求获取详情
+        fetch(`/orders/${orderId}/detail/`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                modalBody.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>订单基本信息</h5>
+                            <hr>
+                            <dl class="row">
+                                <dt class="col-sm-4">订单编号</dt>
+                                <dd class="col-sm-8">#${data.order.id}</dd>
+                                
+                                <dt class="col-sm-4">创建时间</dt>
+                                <dd class="col-sm-8">${data.order.created_at}</dd>
+                                
+                                <dt class="col-sm-4">订单状态</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge 
+                                        ${data.order.status === 'pending' ? 'bg-warning' : 
+                                          data.order.status === 'confirmed' ? 'bg-info' : 
+                                          data.order.status === 'completed' ? 'bg-success' : 'bg-danger'}">
+                                        ${data.order.status_text}
+                                    </span>
+                                </dd>
+                                
+                                <dt class="col-sm-4">交易角色</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge ${data.order.role === 'buyer' ? 'bg-primary' : 'bg-success'}">
+                                        ${data.order.role === 'buyer' ? '买家' : '卖家'}
+                                    </span>
+                                </dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>商品信息</h5>
+                            <hr>
+                            <div class="d-flex">
+                                <div class="flex-shrink-0 me-3">
+                                    ${data.order.product_image ? `<img src="${data.order.product_image}" alt="${data.order.product_title}" width="100" height="100" class="img-thumbnail">` : '<div class="bg-light text-center p-4" style="width: 100px; height: 100px;"><i class="fas fa-box" style="font-size: 3rem; color: #ccc;"></i></div>'}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6>${data.order.product_title}</h6>
+                                    <p class="text-muted mb-1">商品ID: ${data.order.product_id}</p>
+                                    <p class="text-danger fw-bold">¥${data.order.price}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <h5>用户信息</h5>
+                            <hr>
+                            <dl class="row">
+                                <dt class="col-sm-4">${data.order.role === 'buyer' ? '买家' : '卖家'}</dt>
+                                <dd class="col-sm-8">${data.order.current_user}</dd>
+                                
+                                <dt class="col-sm-4">${data.order.role === 'buyer' ? '卖家' : '买家'}</dt>
+                                <dd class="col-sm-8">${data.order.other_user}</dd>
+                            </dl>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>交易时间线</h5>
+                            <hr>
+                            <ul class="timeline">
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-primary text-white rounded-circle p-2">
+                                                <i class="fas fa-plus"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h6>订单创建</h6>
+                                            <p class="text-muted">${data.order.created_at}</p>
+                                        </div>
+                                    </div>
+                                </li>
+                                
+                                ${data.order.confirmed_at ? `
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-info text-white rounded-circle p-2">
+                                                <i class="fas fa-check"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h6>订单确认</h6>
+                                            <p class="text-muted">${data.order.confirmed_at}</p>
+                                        </div>
+                                    </div>
+                                </li>
+                                ` : ''}
+                                
+                                ${data.order.completed_at ? `
+                                <li class="mb-3">
+                                    <div class="d-flex">
+                                        <div class="flex-shrink-0 me-3">
+                                            <div class="bg-success text-white rounded-circle p-2">
+                                                <i class="fas fa-check-circle"></i>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <h6>交易完成</h6>
+                                            <p class="text-muted">${data.order.completed_at}</p>
+                                        </div>
+                                    </div>
+                                </li>
+                                ` : ''}
+                            </ul>
+                        </div>
+                    </div>
+                `;
+            } else {
+                modalBody.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="text-danger mb-3">
+                            <i class="fas fa-exclamation-circle" style="font-size: 3rem;"></i>
+                        </div>
+                        <h5>加载失败</h5>
+                        <p class="text-muted">${data.message || '无法加载订单详情'}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading order detail:', error);
+            modalBody.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="text-danger mb-3">
+                        <i class="fas fa-exclamation-circle" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5>网络错误</h5>
+                    <p class="text-muted">无法连接到服务器，请稍后重试</p>
+                </div>
+            `;
+        });
+    }
+    
+    // 显示错误信息
+    function showError(message) {
+        const errorAlert = document.getElementById('errorAlert');
+        const errorMessage = document.getElementById('errorMessage');
+        
+        errorMessage.textContent = message;
+        errorAlert.classList.remove('d-none');
+    }
+    
+    // 重置按钮事件
+    document.getElementById('resetBtn').addEventListener('click', function() {
+        document.getElementById('orderSearchForm').reset();
+        currentPage = 1;
+        loadOrders();
+    });
+</script>
+
+<style>
+    /* 时间线样式 */
+    .timeline {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .timeline li {
+        position: relative;
+    }
+    
+    .timeline li:not(:last-child)::before {
+        content: '';
+        position: absolute;
+        left: 19px;
+        top: 40px;
+        bottom: 0;
+        width: 2px;
+        background: #e9ecef;
+    }
+    
+    /* 图片样式 */
+    .img-thumbnail {
+        object-fit: cover;
+        aspect-ratio: 1 / 1;
+    }
+    
+    /* 表单样式 */
+    .form-label {
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    /* 表格样式优化 */
+    .table {
+        margin-bottom: 0;
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    /* 卡片阴影效果 */
+    .shadow-sm {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+    }
+    
+    /* 悬停效果 */
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    /* 过渡动画 */
+    .transition-all {
+        transition: all 0.3s ease;
+    }
+    
+    .duration-200 {
+        transition-duration: 0.2s;
+    }
+    
+    /* 状态标签样式 */
+    .badge {
+        padding: 0.5rem 0.75rem;
+        font-weight: 500;
+        font-size: 0.875rem;
+    }
+    
+    /* 按钮样式优化 */
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    /* 响应式设计 */
+    @media (max-width: 768px) {
+        .table-responsive {
+            overflow-x: auto;
+        }
+        
+        .card-header h5 {
+            font-size: 1rem;
+        }
+        
+        .h3 {
+            font-size: 1.5rem;
+        }
+    }
+    
+    /* 加载动画样式 */
+    .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+    
+    /* 统计卡片样式 */
+    #orderStats .card {
+        border: none;
+        border-radius: 0.5rem;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    #orderStats .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    
+    /* 分页样式优化 */
+    .pagination {
+        margin-bottom: 0;
+    }
+    
+    .page-link {
+        color: #007bff;
+        border: 1px solid #dee2e6;
+        transition: all 0.2s ease;
+    }
+    
+    .page-link:hover {
+        color: #0056b3;
+        background-color: #e9ecef;
+        border-color: #dee2e6;
+    }
+    
+    .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    /* 空状态样式 */
+    .text-center.py-5 {
+        padding-top: 3rem !important;
+        padding-bottom: 3rem !important;
+    }
+    
+    /* 搜索框样式 */
+    .input-group .form-control {
+        border-right: 0;
+    }
+    
+    .input-group .btn {
+        border-left: 0;
+    }
+    
+    /* 订单ID样式 */
+    .text-primary.fw-bold {
+        color: #007bff !important;
+        font-weight: 600 !important;
+    }
+    
+    /* 价格样式 */
+    .text-danger.fw-bold {
+        color: #dc3545 !important;
+        font-weight: 600 !important;
+    }
+    
+    /* 辅助文本样式 */
+    .text-sm {
+        font-size: 0.875rem;
+    }
+    
+    /* 图标间距 */
+    .gap-1 {
+        gap: 0.25rem;
+    }
+    
+    .gap-2 {
+        gap: 0.5rem;
+    }
+    
+    /* 按钮组间距 */
+    .d-flex.gap-1 {
+        display: flex;
+        gap: 0.25rem;
+    }
+    
+    /* 卡片标题样式 */
+    .card-header.bg-light {
+        background-color: #f8f9fa !important;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    /* 主标题样式 */
+    h2.mb-4 {
+        color: #212529;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}

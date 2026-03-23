@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}我的钱包 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">钱包余额</h5>
+                    <h1 class="card-text">¥{{ wallet.balance }}</h1>
+                    <small>冻结余额: ¥{{ wallet.frozen_balance }}</small>
+                </div>
+            </div>
+            
+            <div class="card mt-3">
+                <div class="card-body">
+                    <h5 class="card-title">快捷操作</h5>
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'recharge_wallet' %}" class="btn btn-success">
+                            💰 充值
+                        </a>
+                        <a href="{% url 'withdraw_wallet' %}" class="btn btn-warning">
+                            💸 提现
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 交易记录</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if transactions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>时间</th>
+                                        <th>类型</th>
+                                        <th>金额</th>
+                                        <th>余额变化</th>
+                                        <th>状态</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for transaction in transactions %}
+                                    <tr>
+                                        <td>{{ transaction.created_at|date:"Y-m-d H:i" }}</td>
+                                        <td>
+                                            {% if transaction.transaction_type == 'recharge' %}💰 充值
+                                            {% elif transaction.transaction_type == 'withdraw' %}💸 提现
+                                            {% elif transaction.transaction_type == 'payment' %}💳 支付
+                                            {% elif transaction.transaction_type == 'refund' %}↩️ 退款
+                                            {% elif transaction.transaction_type == 'income' %}💵 收入
+                                            {% elif transaction.transaction_type == 'freeze' %}❄️ 冻结
+                                            {% elif transaction.transaction_type == 'unfreeze' %}🔥 解冻
+                                            {% endif %}
+                                            {{ transaction.description }}
+                                        </td>
+                                        <td class="{% if transaction.transaction_type in 'recharge,income' %}text-success{% else %}text-danger{% endif %}">
+                                            ¥{{ transaction.amount }}
+                                        </td>
+                                        <td>
+                                            ¥{{ transaction.balance_before }} → ¥{{ transaction.balance_after }}
+                                        </td>
+                                        <td>
+                                            {% if transaction.status == 'completed' %}
+                                            <span class="badge bg-success">已完成</span>
+                                            {% elif transaction.status == 'pending' %}
+                                            <span class="badge bg-warning">待处理</span>
+                                            {% elif transaction.status == 'failed' %}
+                                            <span class="badge bg-danger">失败</span>
+                                            {% elif transaction.status == 'cancelled' %}
+                                            <span class="badge bg-secondary">已取消</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <p class="text-muted">暂无交易记录</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

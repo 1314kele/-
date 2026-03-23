@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}交易详情 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">交易详情</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>商品信息</h5>
+                            <p><strong>商品名称：</strong>{{ transaction.product.title }}</p>
+                            <p><strong>价格：</strong>¥{{ transaction.price }}</p>
+                            <p><strong>卖家：</strong>{{ transaction.seller.username }}</p>
+                            <p><strong>买家：</strong>{{ transaction.buyer.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>交易状态</h5>
+                            <p>
+                                <strong>状态：</strong>
+                                {% if transaction.status == 'pending' %}
+                                    <span class="badge badge-warning">待确认</span>
+                                {% elif transaction.status == 'confirmed' %}
+                                    <span class="badge badge-info">已确认</span>
+                                {% elif transaction.status == 'completed' %}
+                                    <span class="badge badge-success">已完成</span>
+                                {% elif transaction.status == 'cancelled' %}
+                                    <span class="badge badge-danger">已取消</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>创建时间：</strong>{{ transaction.created_at|date:"Y-m-d H:i" }}</p>
+                            {% if transaction.confirmed_at %}
+                                <p><strong>确认时间：</strong>{{ transaction.confirmed_at|date:"Y-m-d H:i" }}</p>
+                            {% endif %}
+                            {% if transaction.completed_at %}
+                                <p><strong>完成时间：</strong>{{ transaction.completed_at|date:"Y-m-d H:i" }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="transaction-actions">
+                        {% if transaction.status == 'pending' and request.user == transaction.seller %}
+                            <form method="post" action="{% url 'confirm_transaction' transaction.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success">确认交易</button>
+                            </form>
+                        {% endif %}
+                        
+                        {% if transaction.status == 'confirmed' and request.user == transaction.buyer %}
+                            <form method="post" action="{% url 'complete_transaction' transaction.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-primary">完成交易</button>
+                            </form>
+                        {% endif %}
+                        
+                        {% if transaction.status in 'pending,confirmed' %}
+                            <form method="post" action="{% url 'cancel_transaction' transaction.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger" onclick="return confirm('确定要取消交易吗？')">取消交易</button>
+                            </form>
+                        {% endif %}
+                        
+                        <a href="{% url 'product_detail' transaction.product.id %}" class="btn btn-secondary">返回商品详情</a>
+                        <a href="{% url 'order_management' %}" class="btn btn-outline-primary">我的交易记录</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

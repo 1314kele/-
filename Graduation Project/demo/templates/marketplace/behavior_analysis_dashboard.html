@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+
+{% block title %}用户行为分析仪表盘{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.2s;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .card-header {
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #007bff;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mt-4 mb-4">用户行为分析仪表盘</h1>
+    
+    <!-- 统计卡片 -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card dashboard-card">
+                <div class="card-body text-center">
+                    <div class="stat-value" id="total-behaviors">0</div>
+                    <div class="stat-label">总行为次数</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card">
+                <div class="card-body text-center">
+                    <div class="stat-value" id="total-abnormal">0</div>
+                    <div class="stat-label">异常行为次数</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card">
+                <div class="card-body text-center">
+                    <div class="stat-value" id="high-risk-users">0</div>
+                    <div class="stat-label">高风险用户数</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card dashboard-card">
+                <div class="card-body text-center">
+                    <div class="stat-value" id="average-risk">0</div>
+                    <div class="stat-label">平均风险分数</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 图表区域 -->
+    <div class="row mb-4">
+        <!-- 行为趋势图 -->
+        <div class="col-md-8">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">用户行为趋势（最近7天）</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="behaviorTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 异常行为类型分布 -->
+        <div class="col-md-4">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">异常行为类型分布</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="abnormalTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <!-- 风险用户分布 -->
+        <div class="col-md-6">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">风险用户分布</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="riskLevelChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 风险分数趋势 -->
+        <div class="col-md-6">
+            <div class="card dashboard-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">平均风险分数趋势（最近7天）</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="riskTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 异常行为报告列表 -->
+    <div class="card dashboard-card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">最新异常行为报告</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>用户</th>
+                            <th>风险分数</th>
+                            <th>报告时间</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="report-list">
+                        <!-- 报告列表将通过JavaScript动态加载 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 获取统计数据
+        fetch('{% url "get_behavior_stats" %}')
+            .then(response => response.json())
+            .then(data => {
+                // 更新统计卡片
+                updateStatCards(data);
+                
+                // 渲染图表
+                renderBehaviorTrendChart(data);
+                renderAbnormalTypeChart(data);
+                renderRiskLevelChart(data);
+                renderRiskTrendChart(data);
+            })
+            .catch(error => {
+                console.error('获取行为统计数据失败:', error);
+            });
+        
+        // 更新统计卡片
+        function updateStatCards(data) {
+            // 计算总行为次数
+            const totalBehaviors = data.behavior_counts.reduce((sum, count) => sum + count, 0);
+            document.getElementById('total-behaviors').textContent = totalBehaviors;
+            
+            // 计算总异常行为次数
+            const totalAbnormal = data.abnormal_counts.reduce((sum, count) => sum + count, 0);
+            document.getElementById('total-abnormal').textContent = totalAbnormal;
+            
+            // 高风险用户数
+            document.getElementById('high-risk-users').textContent = data.risk_levels.high.count;
+            
+            // 计算平均风险分数
+            const totalRiskScore = data.risk_scores.reduce((sum, score) => sum + score, 0);
+            const averageRisk = totalRiskScore / data.risk_scores.length;
+            document.getElementById('average-risk').textContent = averageRisk.toFixed(2);
+        }
+        
+        // 渲染行为趋势图
+        function renderBehaviorTrendChart(data) {
+            const ctx = document.getElementById('behaviorTrendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [
+                        {
+                            label: '正常行为',
+                            data: data.behavior_counts,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.1,
+                            fill: true
+                        },
+                        {
+                            label: '异常行为',
+                            data: data.abnormal_counts,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            tension: 0.1,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '行为次数'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '日期'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 渲染异常行为类型分布饼图
+        function renderAbnormalTypeChart(data) {
+            const ctx = document.getElementById('abnormalTypeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(data.type_counts),
+                    datasets: [{
+                        data: Object.values(data.type_counts),
+                        backgroundColor: [
+                            '#007bff',
+                            '#28a745',
+                            '#dc3545',
+                            '#ffc107',
+                            '#6c757d'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 渲染风险用户分布图
+        function renderRiskLevelChart(data) {
+            const ctx = document.getElementById('riskLevelChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.values(data.risk_levels).map(level => level.label),
+                    datasets: [{
+                        label: '用户数量',
+                        data: Object.values(data.risk_levels).map(level => level.count),
+                        backgroundColor: [
+                            '#28a745',
+                            '#ffc107',
+                            '#dc3545'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '用户数量'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // 渲染风险分数趋势图
+        function renderRiskTrendChart(data) {
+            const ctx = document.getElementById('riskTrendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.dates,
+                    datasets: [{
+                        label: '平均风险分数',
+                        data: data.risk_scores,
+                        borderColor: '#ffc107',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        tension: 0.1,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '风险分数'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: '日期'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

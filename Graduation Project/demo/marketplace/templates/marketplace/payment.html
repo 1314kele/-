@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}支付订单 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">💳 支付订单</h4>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h5>商品信息</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>{{ transaction.product.title }}</h6>
+                                    <p class="mb-0 text-muted">{{ transaction.product.description|truncatewords:10 }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>订单信息</h5>
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <p class="mb-1"><strong>订单号：</strong>{{ transaction.id }}</p>
+                                    <p class="mb-1"><strong>卖家：</strong>{{ transaction.seller.username }}</p>
+                                    <p class="mb-1"><strong>金额：</strong><span class="text-primary fw-bold">¥{{ transaction.price }}</span></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        <h5 class="mb-3">选择支付方式</h5>
+                        
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="card payment-option">
+                                    <div class="card-body text-center">
+                                        <input type="radio" 
+                                               name="payment_method" 
+                                               value="wallet" 
+                                               id="wallet" 
+                                               class="card-input-element d-none"
+                                               required>
+                                        <label for="wallet" class="stretched-link">
+                                            <div class="payment-icon">👛</div>
+                                            <div class="payment-name">钱包支付</div>
+                                            <div class="payment-desc">使用账户余额支付</div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card payment-option">
+                                    <div class="card-body text-center">
+                                        <input type="radio" 
+                                               name="payment_method" 
+                                               value="alipay" 
+                                               id="alipay" 
+                                               class="card-input-element d-none"
+                                               required>
+                                        <label for="alipay" class="stretched-link">
+                                            <div class="payment-icon">💳</div>
+                                            <div class="payment-name">支付宝</div>
+                                            <div class="payment-desc">使用支付宝支付</div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="card payment-option">
+                                    <div class="card-body text-center">
+                                        <input type="radio" 
+                                               name="payment_method" 
+                                               value="wechat" 
+                                               id="wechat" 
+                                               class="card-input-element d-none"
+                                               required>
+                                        <label for="wechat" class="stretched-link">
+                                            <div class="payment-icon">💚</div>
+                                            <div class="payment-name">微信支付</div>
+                                            <div class="payment-desc">使用微信支付</div>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>支付说明：</strong>
+                            <ul class="mb-0">
+                                <li>钱包支付：直接从账户余额扣除，即时到账</li>
+                                <li>支付宝/微信：跳转到第三方支付平台完成支付</li>
+                                <li>支付成功后，订单状态将自动更新</li>
+                                <li>如有问题，请联系客服</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                确认支付 ¥{{ transaction.price }}
+                            </button>
+                            <a href="{% url 'transaction_detail' transaction.id %}" class="btn btn-secondary">
+                                返回订单详情
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.payment-option {
+    cursor: pointer;
+    transition: all 0.3s;
+    border: 2px solid transparent;
+}
+
+.payment-option:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.payment-option input:checked + label {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+}
+
+.payment-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+}
+
+.payment-name {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.payment-desc {
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+</style>
+{% endblock %}

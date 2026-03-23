@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}我的消息 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="mb-4">我的消息</h2>
+            
+            <!-- 消息标签页 -->
+            <ul class="nav nav-tabs mb-4" id="messageTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="received-tab" data-bs-toggle="tab" data-bs-target="#received" type="button" role="tab" aria-controls="received" aria-selected="true">
+                        收到的消息 <span class="badge bg-primary">{{ received_messages|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="sent-tab" data-bs-toggle="tab" data-bs-target="#sent" type="button" role="tab" aria-controls="sent" aria-selected="false">
+                        发送的消息 <span class="badge bg-secondary">{{ sent_messages|length }}</span>
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="messageTabsContent">
+                <!-- 收到的消息 -->
+                <div class="tab-pane fade show active" id="received" role="tabpanel" aria-labelledby="received-tab">
+                    {% if received_messages %}
+                        <div class="list-group">
+                            {% for message in received_messages %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-user me-2"></i>
+                                            {{ message.sender.username }}
+                                            <small class="text-muted">关于：{{ message.product.title }}</small>
+                                        </h6>
+                                        <small class="text-muted">{{ message.created_at|date:"Y-m-d H:i" }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ message.content }}</p>
+                                    <div class="mt-2">
+                                        <a href="{% url 'product_detail' message.product.id %}" class="btn btn-sm btn-outline-primary">查看商品</a>
+                                        <a href="{% url 'send_message' message.product.id %}" class="btn btn-sm btn-primary">回复</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-envelope fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">暂无收到的消息</h4>
+                            <p class="text-muted">您还没有收到任何消息</p>
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <!-- 发送的消息 -->
+                <div class="tab-pane fade" id="sent" role="tabpanel" aria-labelledby="sent-tab">
+                    {% if sent_messages %}
+                        <div class="list-group">
+                            {% for message in sent_messages %}
+                                <div class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">
+                                            <i class="fas fa-user me-2"></i>
+                                            发给：{{ message.receiver.username }}
+                                            <small class="text-muted">关于：{{ message.product.title }}</small>
+                                        </h6>
+                                        <small class="text-muted">{{ message.created_at|date:"Y-m-d H:i" }}</small>
+                                    </div>
+                                    <p class="mb-1">{{ message.content }}</p>
+                                    <div class="mt-2">
+                                        <a href="{% url 'product_detail' message.product.id %}" class="btn btn-sm btn-outline-primary">查看商品</a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-paper-plane fa-3x text-muted mb-3"></i>
+                            <h4 class="text-muted">暂无发送的消息</h4>
+                            <p class="text-muted">您还没有发送任何消息</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap 5 JavaScript -->
+<script>
+    // 初始化标签页
+    var messageTabs = document.getElementById('messageTabs');
+    if (messageTabs) {
+        var tab = new bootstrap.Tab(messageTabs.querySelector('.nav-link.active'));
+    }
+</script>
+{% endblock %}

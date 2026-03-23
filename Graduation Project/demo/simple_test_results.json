@@ -1,0 +1,24 @@
+{
+  "timestamp": "2026-03-20 21:16:39",
+  "total_execution_time": 10.95573878288269,
+  "functional_test": {
+    "status": "passed",
+    "execution_time": 2.350902795791626,
+    "passed_tests": 0,
+    "failed_tests": 0,
+    "output": "\n\n\n=== 功能测试报告 ===\n通过测试: 2\n失败测试: 7\n总测试数: 9\n\n错误详情:\n  - 用户登录登出功能测试: UNIQUE constraint failed: auth_user.username\n  - 商品管理功能测试: UNIQUE constraint failed: auth_user.username\n  - 搜索功能测试: UNIQUE constraint failed: auth_user.username\n  - 交易管理功能测试: UNIQUE constraint failed: auth_user.username\n  - 消息系统功能测试: UNIQUE constraint failed: auth_user.username\n  - 评价系统功能测试: UNIQUE constraint failed: auth_user.username\n  - 安全功能测试: UNIQUE constraint failed: auth_user.username\n\n详细测试报告已保存到: functional_test_report.txt\n",
+    "errors": "Not Found: /marketplace/products/\nNot Found: /marketplace/search/\n"
+  },
+  "performance_test": {
+    "status": "completed",
+    "execution_time": 8.60382628440857,
+    "output": "校园二手交易平台性能测试\n==================================================\n开始性能测试套件...\n\n=== 数据库性能测试 ===\n数据库连接时间: 0.0040秒\n查询100个商品时间: 0.0056秒\n写入10个商品时间: 0.0624秒\n当前商品总数: 52\n\n=== API接口性能测试 ===\n用户登录时间: 0.1367秒\n首页加载时间: 0.2258秒\n商品列表页时间: 0.0172秒\n搜索功能时间: 0.0139秒\n\n=== 并发性能测试 (10线程, 10请求/线程) ===\n总请求数: 100\n总时间: 7.03秒\n平均响应时间: 0.6913秒\n最大响应时间: 1.8666秒\n最小响应时间: 0.0108秒\n每秒请求数: 14.23\n\n=== 内存使用测试 ===\n测试前内存使用: 64.26 MB\n测试后内存使用: 64.26 MB\n内存增加: 0.00 MB\n加载商品数: 52\n加载分类数: 9\n\n=== 性能测试报告 ===\n性能测试报告已生成: performance_test_report.txt\n",
+    "errors": "Not Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\nNot Found: /marketplace/search/\nNot Found: /marketplace/products/\nNot Found: /marketplace/search/\n",
+    "metrics": {
+      "requests_per_second": 14.23
+    }
+  },
+  "recommendations": [
+    "提升系统并发处理能力"
+  ]
+}

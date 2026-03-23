@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block title %}商品分类 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2 class="mb-4">商品分类</h2>
+        <p class="text-muted">浏览所有商品分类，找到您感兴趣的物品</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for category in categories %}
+    <div class="col-md-4 mb-4">
+        <div class="card category-card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <i class="fas fa-tag me-2"></i>{{ category.name }}
+                </h5>
+                {% if category.description %}
+                <p class="card-text text-muted">{{ category.description }}</p>
+                {% endif %}
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">
+                        <i class="fas fa-box me-1"></i>
+                        {{ category.product_set.count }} 件商品
+                    </small>
+                    <a href="{% url 'category_products' category.id %}" class="btn btn-primary btn-sm">
+                        浏览商品 <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            暂无商品分类
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<style>
+.category-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: 1px solid #e9ecef;
+}
+
+.category-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.category-card .card-title {
+    color: #2c3e50;
+    font-weight: 600;
+}
+</style>
+{% endblock %}

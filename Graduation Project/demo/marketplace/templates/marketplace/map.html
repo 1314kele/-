@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}商品地图 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">🗺️ 商品地图</h4>
+                </div>
+                <div class="card-body p-0">
+                    <div id="map" style="height: 600px; width: 100%;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📍 附近商品</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush" id="nearby-products">
+                        <div class="text-center py-3">
+                            <p class="text-muted">点击地图查看附近商品</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 商品列表</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>商品</th>
+                                    <th>价格</th>
+                                    <th>分类</th>
+                                    <th>卖家</th>
+                                    <th>距离</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="product-table">
+                                {% for product in products %}
+                                <tr data-lat="{{ product.latitude }}" data-lon="{{ product.longitude }}" data-id="{{ product.id }}">
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if product.image %}
+                                            <img src="{{ product.image.url }}" class="me-2" style="width: 40px; height: 40px; object-fit: cover;">
+                                            {% endif %}
+                                            <div>
+                                                <strong>{{ product.title }}</strong>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-primary fw-bold">¥{{ product.price }}</td>
+                                    <td>{{ product.category.name }}</td>
+                                    <td>{{ product.seller.username }}</td>
+                                    <td class="distance-cell">-</td>
+                                    <td>
+                                        <a href="{% url 'product_detail' product.id %}" class="btn btn-sm btn-outline-primary">
+                                            查看详情
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const map = L.map('map').setView([39.9042, 116.4074], 12);
+    
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+    
+    const products = {{ products|safe }};
+    const markers = [];
+    
+    products.forEach(function(product) {
+        if (product.latitude && product.longitude) {
+            const marker = L.marker([product.latitude, product.longitude]).addTo(map);
+            
+            const popupContent = `
+                <div style="min-width: 200px;">
+                    <h6>${product.title}</h6>
+                    <p class="mb-1"><strong>价格：</strong>¥${product.price}</p>
+                    <p class="mb-1"><strong>分类：</strong>${product.category_name}</p>
+                    <p class="mb-1"><strong>卖家：</strong>${product.seller_username}</p>
+                    <p class="mb-1"><strong>地点：</strong>${product.location}</p>
+                    <a href="/products/${product.id}/" class="btn btn-sm btn-primary">查看详情</a>
+                </div>
+            `;
+            
+            marker.bindPopup(popupContent);
+            markers.push(marker);
+        }
+    });
+    
+    const group = new L.featureGroup(markers);
+    map.addLayer(group);
+    map.fitBounds(group.getBounds());
+    
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const userLat = position.coords.latitude;
+            const userLon = position.coords.longitude;
+            
+            L.marker([userLat, userLon], {
+                icon: L.divIcon({
+                    className: 'user-location-marker',
+                    html: '<div style="background: #007bff; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white;"></div>',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10]
+                })
+            }).addTo(map).bindPopup('您的位置');
+            
+            map.setView([userLat, userLon], 14);
+            
+            loadNearbyProducts(userLat, userLon);
+        }, function(error) {
+            console.log('Geolocation error:', error);
+        });
+    }
+    
+    function loadNearbyProducts(lat, lon) {
+        fetch(`/api/nearby-products/?lat=${lat}&lon=${lon}&radius=5`)
+            .then(response => response.json())
+            .then(data => {
+                updateNearbyProducts(data.products);
+                updateDistances(lat, lon);
+            })
+            .catch(error => console.error('Error:', error));
+    }
+    
+    function updateNearbyProducts(products) {
+        const container = document.getElementById('nearby-products');
+        
+        if (products.length > 0) {
+            container.innerHTML = products.map(product => `
+                <a href="/products/${product.id}/" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h6 class="mb-1">${product.title}</h6>
+                        <small>${product.distance} km</small>
+                    </div>
+                    <p class="mb-1 text-muted">¥${product.price}</p>
+                    <small>${product.category} - ${product.seller}</small>
+                </a>
+            `).join('');
+        } else {
+            container.innerHTML = '<div class="text-center py-3"><p class="text-muted">附近暂无商品</p></div>';
+        }
+    }
+    
+    function updateDistances(userLat, userLon) {
+        const rows = document.querySelectorAll('#product-table tr[data-lat]');
+        
+        rows.forEach(row => {
+            const lat = parseFloat(row.getAttribute('data-lat'));
+            const lon = parseFloat(row.getAttribute('data-lon'));
+            const distance = calculateDistance(userLat, userLon, lat, lon);
+            
+            const distanceCell = row.querySelector('.distance-cell');
+            if (distanceCell) {
+                distanceCell.textContent = distance.toFixed(2) + ' km';
+            }
+        });
+    }
+    
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+});
+</script>
+
+<style>
+.user-location-marker {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+}
+
+#map {
+    border-radius: 8px;
+}
+</style>
+{% endblock %}

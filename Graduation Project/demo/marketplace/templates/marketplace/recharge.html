@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}钱包充值 - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">💰 钱包充值</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="amount" class="form-label">充值金额</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="amount" 
+                                   name="amount" 
+                                   min="0.01" 
+                                   step="0.01" 
+                                   placeholder="请输入充值金额" 
+                                   required>
+                            <div class="form-text">
+                                <small>建议金额：</small>
+                                <div class="btn-group btn-group-sm mt-2">
+                                    <button type="button" class="btn btn-outline-primary" onclick="setAmount(10)">¥10</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="setAmount(50)">¥50</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="setAmount(100)">¥100</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="setAmount(200)">¥200</button>
+                                    <button type="button" class="btn btn-outline-primary" onclick="setAmount(500)">¥500</button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="payment_method" class="form-label">支付方式</label>
+                            <select class="form-select" id="payment_method" name="payment_method" required>
+                                <option value="">请选择支付方式</option>
+                                <option value="alipay">支付宝</option>
+                                <option value="wechat">微信支付</option>
+                                <option value="bank">银行卡</option>
+                            </select>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <strong>温馨提示：</strong>
+                            <ul class="mb-0">
+                                <li>充值金额必须大于0元</li>
+                                <li>充值申请提交后，请等待管理员审核</li>
+                                <li>如有疑问，请联系客服</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                确认充值
+                            </button>
+                            <a href="{% url 'wallet_view' %}" class="btn btn-secondary">
+                                返回钱包
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setAmount(amount) {
+    document.getElementById('amount').value = amount;
+}
+</script>
+{% endblock %}

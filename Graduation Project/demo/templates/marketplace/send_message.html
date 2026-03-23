@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}联系卖家 - {{ product.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">联系卖家</h4>
+                </div>
+                <div class="card-body">
+                    <!-- 商品信息 -->
+                    <div class="mb-4">
+                        <h5>商品信息</h5>
+                        <div class="d-flex align-items-center">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" class="rounded me-3" alt="{{ product.title }}" style="width: 80px; height: 80px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-light rounded me-3 d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                                    <i class="fas fa-image text-muted"></i>
+                                </div>
+                            {% endif %}
+                            <div>
+                                <h6 class="mb-1">{{ product.title }}</h6>
+                                <p class="text-primary mb-1">¥{{ product.price }}</p>
+                                <small class="text-muted">卖家：{{ product.seller.username }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 消息表单 -->
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_content" class="form-label">消息内容</label>
+                            <textarea name="content" class="form-control" id="id_content" rows="6" placeholder="请输入您想对卖家说的话..." required>{{ form.content.value|default:'' }}</textarea>
+                            {% if form.content.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.content.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'product_detail' product.id %}" class="btn btn-outline-secondary me-md-2">取消</a>
+                            <button type="submit" class="btn btn-primary">发送消息</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 联系卖家提示 -->
+            <div class="alert alert-info mt-3">
+                <h6><i class="fas fa-info-circle me-2"></i>联系卖家提示</h6>
+                <ul class="mb-0">
+                    <li>请礼貌地与卖家沟通，说明您的购买意向</li>
+                    <li>可以询问商品的详细信息、交易方式等</li>
+                    <li>交易时请注意安全，建议选择公共场所见面</li>
+                    <li>平台不承担交易风险，请谨慎交易</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

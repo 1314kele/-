@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ product.title }} - 校园二手交易平台{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- 商品图片 -->
+    <div class="col-md-6">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" class="img-fluid rounded" alt="{{ product.title }}">
+        {% else %}
+        <div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 400px;">
+            <i class="fas fa-image fa-5x text-muted"></i>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- 商品信息 -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="card-title">{{ product.title }}</h2>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="price h3 text-danger">¥{{ product.price }}</span>
+                    <div>
+                        <span class="badge bg-secondary">{{ product.get_condition_display }}</span>
+                        <!-- 商品状态显示 -->
+                        {% if product.status == 'available' %}
+                        <span class="badge status-available">可交易</span>
+                        {% elif product.status == 'sold' %}
+                        <span class="badge status-sold">已售出</span>
+                        {% elif product.status == 'reserved' %}
+                        <span class="badge status-reserved">已预订</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted">分类: {{ product.category.name }}</small>
+                </div>
+                
+                <div class="mb-3">
+                    <h5>商品描述</h5>
+                    <p class="card-text">{{ product.description|linebreaks }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <h5>卖家信息</h5>
+                    <p><i class="fas fa-user"></i> {{ product.seller.username }}</p>
+                    <p><i class="fas fa-map-marker-alt"></i> {{ product.location }}</p>
+                    <p><i class="fas fa-phone"></i> {{ product.contact_info }}</p>
+                </div>
+                
+                <div class="mb-3">
+                    <small class="text-muted">
+                        <i class="fas fa-eye"></i> 浏览 {{ product.views }} 次 | 
+                        <i class="fas fa-clock"></i> {{ product.created_at|date:'Y-m-d H:i' }}
+                    </small>
+                </div>
+                
+                <!-- 操作按钮 -->
+                <div class="d-grid gap-2">
+                    {% if user.is_authenticated %}
+                        {% if user == product.seller %}
+                        <a href="{% url 'edit_product' product.id %}" class="btn btn-warning">
+                            <i class="fas fa-edit"></i> 编辑商品
+                        </a>
+                        {% else %}
+                            {% if product.status == 'available' %}
+                            <form method="post" action="{% url 'create_transaction' product.id %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-shopping-cart"></i> 立即购买
+                                </button>
+                            </form>
+                            {% elif product.status == 'reserved' %}
+                            <button class="btn btn-warning" disabled>
+                                <i class="fas fa-clock"></i> 商品已预订
+                            </button>
+                            {% elif product.status == 'sold' %}
+                            <button class="btn btn-secondary" disabled>
+                                <i class="fas fa-check"></i> 商品已售出
+                            </button>
+                            {% endif %}
+                            
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'send_message' product.id %}" class="btn btn-primary flex-fill">
+                                    <i class="fas fa-envelope"></i> 联系卖家
+                                </a>
+                                <button type="button" class="btn btn-outline-danger flex-fill" 
+                                        onclick="toggleFavorite({{ product.id }})">
+                                    <i class="fas fa-heart{% if not is_favorited %}-o{% endif %}" id="favorite-icon"></i>
+                                    <span id="favorite-text">{% if is_favorited %}取消收藏{% else %}收藏{% endif %}</span>
+                                </button>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                    <div class="alert alert-info">
+                        请<a href="{% url 'login' %}">登录</a>后联系卖家或收藏商品
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 相关商品 -->
+{% if related_products %}
+<div class="row mt-5">
+    <div class="col-12">
+        <h3>相关商品</h3>
+        <div class="row">
+            {% for related_product in related_products %}
+            <div class="col-md-3 mb-4">
+                <div class="card product-card h-100">
+                    {% if related_product.image %}
+                    <img src="{{ related_product.image.url }}" class="card-img-top" alt="{{ related_product.title }}" style="height: 150px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 150px;">
+                        <i class="fas fa-image fa-2x text-muted"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body d-flex flex-column">
+                        <h6 class="card-title">{{ related_product.title|truncatechars:20 }}</h6>
+                        <div class="mt-auto">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="price">¥{{ related_product.price }}</span>
+                                <span class="badge bg-secondary condition-badge">{{ related_product.get_condition_display }}</span>
+                            </div>
+                            <!-- 相关商品状态显示 -->
+                            <div class="mt-1">
+                                {% if related_product.status == 'available' %}
+                                <span class="badge status-available small">可交易</span>
+                                {% elif related_product.status == 'sold' %}
+                                <span class="badge status-sold small">已售出</span>
+                                {% elif related_product.status == 'reserved' %}
+                                <span class="badge status-reserved small">已预订</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <a href="{% url 'product_detail' related_product.id %}" class="stretched-link"></a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleFavorite(productId) {
+    fetch(`/products/${productId}/favorite/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}',
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            const icon = document.getElementById('favorite-icon');
+            const text = document.getElementById('favorite-text');
+            
+            if (data.is_favorited) {
+                icon.classList.remove('fa-heart-o');
+                icon.classList.add('fa-heart');
+                text.textContent = '取消收藏';
+            } else {
+                icon.classList.remove('fa-heart');
+                icon.classList.add('fa-heart-o');
+                text.textContent = '收藏';
+            }
+        }
+    });
+}
+</script>
+{% endblock %}
