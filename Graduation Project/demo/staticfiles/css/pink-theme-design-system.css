@@ -1,0 +1,473 @@
+/* ===== 校园二手交易平台 - 粉色系设计系统 ===== */
+
+/* ===== 设计规范文档 ===== */
+/* 
+设计主题：柔美粉色校园风
+设计理念：结合校园青春气息与粉色系的温暖感，创造温馨友好的交易环境
+色彩基调：以粉色为主，搭配柔和的辅助色，营造舒适视觉体验
+*/
+
+/* ===== 色彩系统 ===== */
+:root {
+  /* 方案一：柔美樱花粉 */
+  --pink-primary-50: #fdf2f8;
+  --pink-primary-100: #fce7f3;
+  --pink-primary-200: #fbcfe8;
+  --pink-primary-300: #f9a8d4;
+  --pink-primary-400: #f472b6;
+  --pink-primary-500: #ec4899;
+  --pink-primary-600: #db2777;
+  --pink-primary-700: #be185d;
+  --pink-primary-800: #9d174d;
+  --pink-primary-900: #831843;
+  
+  /* 方案二：温暖珊瑚粉 */
+  --coral-primary-50: #fff1f2;
+  --coral-primary-100: #ffe4e6;
+  --coral-primary-200: #fecdd3;
+  --coral-primary-300: #fda4af;
+  --coral-primary-400: #fb7185;
+  --coral-primary-500: #f43f5e;
+  --coral-primary-600: #e11d48;
+  --coral-primary-700: #be123c;
+  --coral-primary-800: #9f1239;
+  --coral-primary-900: #881337;
+  
+  /* 方案三：梦幻薰衣草粉 */
+  --lavender-primary-50: #faf5ff;
+  --lavender-primary-100: #f3e8ff;
+  --lavender-primary-200: #e9d5ff;
+  --lavender-primary-300: #d8b4fe;
+  --lavender-primary-400: #c084fc;
+  --lavender-primary-500: #a855f7;
+  --lavender-primary-600: #9333ea;
+  --lavender-primary-700: #7c3aed;
+  --lavender-primary-800: #6b21a8;
+  --lavender-primary-900: #581c87;
+  
+  /* 最终选择：柔美樱花粉方案 */
+  --primary-50: var(--pink-primary-50);
+  --primary-100: var(--pink-primary-100);
+  --primary-200: var(--pink-primary-200);
+  --primary-300: var(--pink-primary-300);
+  --primary-400: var(--pink-primary-400);
+  --primary-500: var(--pink-primary-500);
+  --primary-600: var(--pink-primary-600);
+  --primary-700: var(--pink-primary-700);
+  --primary-800: var(--pink-primary-800);
+  --primary-900: var(--pink-primary-900);
+  
+  /* 辅助色系统 */
+  --secondary-50: #f8fafc;
+  --secondary-100: #f1f5f9;
+  --secondary-200: #e2e8f0;
+  --secondary-300: #cbd5e1;
+  --secondary-400: #94a3b8;
+  --secondary-500: #64748b;
+  --secondary-600: #475569;
+  --secondary-700: #334155;
+  --secondary-800: #1e293b;
+  --secondary-900: #0f172a;
+  
+  /* 强调色 - 柔和的紫色 */
+  --accent-50: #faf5ff;
+  --accent-100: #f3e8ff;
+  --accent-200: #e9d5ff;
+  --accent-300: #d8b4fe;
+  --accent-400: #c084fc;
+  --accent-500: #a855f7;
+  --accent-600: #9333ea;
+  --accent-700: #7c3aed;
+  --accent-800: #6b21a8;
+  --accent-900: #581c87;
+  
+  /* 语义色彩 */
+  --success-500: #10b981;
+  --warning-500: #f59e0b;
+  --error-500: #ef4444;
+  --info-500: #3b82f6;
+  
+  /* 中性色彩 - 调整为偏暖的灰色 */
+  --gray-50: #fafafa;
+  --gray-100: #f4f4f5;
+  --gray-200: #e4e4e7;
+  --gray-300: #d4d4d8;
+  --gray-400: #a1a1aa;
+  --gray-500: #71717a;
+  --gray-600: #52525b;
+  --gray-700: #3f3f46;
+  --gray-800: #27272a;
+  --gray-900: #18181b;
+  
+  /* 间距系统 */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  
+  /* 圆角系统 */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+  --radius-full: 9999px;
+  
+  /* 阴影系统 - 调整为柔和的粉色阴影 */
+  --shadow-sm: 0 1px 2px 0 rgb(236 72 153 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(236 72 153 / 0.1), 0 2px 4px -2px rgb(236 72 153 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(236 72 153 / 0.1), 0 4px 6px -4px rgb(236 72 153 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(236 72 153 / 0.1), 0 8px 10px -6px rgb(236 72 153 / 0.1);
+  
+  /* 过渡动画 */
+  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-normal: 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  
+  /* 字体系统 */
+  --font-family-sans: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --font-family-serif: 'Georgia', 'Times New Roman', serif;
+  --font-family-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+  
+  /* 背景图片相关变量 */
+  --bg-image: url('https://images.unsplash.com/photo-1519681393784-d120267933ba');
+  --bg-size: cover;
+  --bg-position: center;
+  --bg-repeat: no-repeat;
+  --bg-attachment: fixed;
+  --bg-overlay: linear-gradient(135deg, rgba(253, 242, 248, 0.85) 0%, rgba(252, 231, 243, 0.9) 100%);
+  
+  /* 层级系统 */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal: 1040;
+  --z-popover: 1050;
+  --z-tooltip: 1060;
+  --z-bg: -1;
+}
+
+/* ===== 基础重置 ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-family-sans);
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--gray-800);
+  background: var(--bg-image) var(--bg-position) / var(--bg-size) var(--bg-repeat) var(--bg-attachment);
+  position: relative;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* 背景遮罩层 */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-overlay);
+  z-index: var(--z-bg);
+  pointer-events: none;
+}
+
+/* 确保内容在遮罩层之上 */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ===== 排版系统 ===== */
+.text-display-lg {
+  font-size: 3rem;
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--primary-700);
+}
+
+.text-display-md {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--primary-600);
+}
+
+.text-heading-lg {
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: var(--primary-600);
+}
+
+.text-heading-md {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.02em;
+  color: var(--primary-600);
+}
+
+.text-heading-sm {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--primary-600);
+}
+
+.text-body-lg {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--gray-700);
+}
+
+.text-body-md {
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--gray-700);
+}
+
+.text-body-sm {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--gray-600);
+}
+
+.text-caption {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--gray-500);
+}
+
+/* ===== 导航栏系统 ===== */
+.navbar-pro {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--primary-100);
+  padding: var(--space-3) 0;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  transition: all var(--transition-normal);
+}
+
+.navbar-pro.scrolled {
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow-md);
+}
+
+.navbar-brand-pro {
+  font-weight: 700;
+  font-size: 1.25rem;
+  background: linear-gradient(135deg, var(--primary-500), var(--accent-500));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.nav-link-pro {
+  font-weight: 500;
+  color: var(--gray-700) !important;
+  padding: var(--space-2) var(--space-3) !important;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  position: relative;
+  text-decoration: none;
+}
+
+.nav-link-pro:hover {
+  color: var(--primary-600) !important;
+  background: var(--primary-50);
+}
+
+/* ===== 卡片系统 ===== */
+.card-pro {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+  transition: all var(--transition-normal);
+  overflow: hidden;
+  position: relative;
+}
+
+.card-pro:hover {
+  border-color: var(--primary-200);
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-2px);
+}
+
+/* ===== 按钮系统 ===== */
+.btn-pro {
+  font-weight: 500;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-5);
+  transition: all var(--transition-fast);
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-pro.primary {
+  background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
+  color: white;
+  box-shadow: 0 2px 4px rgba(236, 72, 153, 0.2);
+}
+
+.btn-pro.primary:hover {
+  background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
+  box-shadow: 0 4px 8px rgba(236, 72, 153, 0.3);
+  transform: translateY(-1px);
+}
+
+.btn-pro.secondary {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--gray-700);
+  border: 1px solid var(--primary-200);
+}
+
+.btn-pro.secondary:hover {
+  background: var(--primary-50);
+  border-color: var(--primary-300);
+  transform: translateY(-1px);
+}
+
+/* ===== 英雄区域 ===== */
+.hero-section-pro {
+  background: linear-gradient(135deg, rgba(253, 242, 248, 0.9) 0%, rgba(252, 231, 243, 0.95) 100%);
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-2xl);
+  margin: var(--space-8) 0;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+.hero-section-pro::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="pink-grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(236, 72, 153, 0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23pink-grid)"/></svg>');
+  opacity: 0.3;
+}
+
+/* ===== 响应式设计 ===== */
+@media (max-width: 768px) {
+  :root {
+    --bg-attachment: scroll;
+    --bg-size: cover;
+  }
+  
+  body {
+    background-attachment: scroll;
+  }
+  
+  .text-display-lg {
+    font-size: 2rem;
+  }
+  
+  .text-display-md {
+    font-size: 1.75rem;
+  }
+  
+  .hero-section-pro {
+    margin: var(--space-4) 0;
+    border-radius: var(--radius-xl);
+  }
+}
+
+@media (max-width: 576px) {
+  .text-display-lg {
+    font-size: 1.75rem;
+  }
+  
+  .text-display-md {
+    font-size: 1.5rem;
+  }
+}
+
+/* ===== 背景图片备选方案 ===== */
+/* 
+备选图片方案（Unsplash链接）：
+1. 粉色樱花背景：https://images.unsplash.com/photo-1519681393784-d120267933ba
+2. 柔光粉色渐变：https://images.unsplash.com/photo-1558618666-fcd25c85cd64
+3. 校园樱花场景：https://images.unsplash.com/photo-1522444195799-478538b28823
+4. 粉色云彩背景：https://images.unsplash.com/photo-1533134486753-c833f0ed4866
+5. 柔和粉色纹理：https://images.unsplash.com/photo-1518837695005-2083093ee35b
+*/
+
+/* 背景图片切换类 */
+.bg-pink-sakura {
+  --bg-image: url('https://images.unsplash.com/photo-1519681393784-d120267933ba');
+}
+
+.bg-pink-gradient {
+  --bg-image: url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64');
+}
+
+.bg-campus-sakura {
+  --bg-image: url('https://images.unsplash.com/photo-1522444195799-478538b28823');
+}
+
+.bg-pink-clouds {
+  --bg-image: url('https://images.unsplash.com/photo-1533134486753-c833f0ed4866');
+}
+
+.bg-pink-texture {
+  --bg-image: url('https://images.unsplash.com/photo-1518837695005-2083093ee35b');
+}
+
+/* ===== 暗色主题支持 ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-overlay: linear-gradient(135deg, rgba(131, 24, 67, 0.85) 0%, rgba(157, 23, 77, 0.9) 100%);
+  }
+  
+  body {
+    color: var(--gray-100);
+  }
+  
+  .card-pro {
+    background: rgba(30, 30, 30, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .navbar-pro {
+    background: rgba(30, 30, 30, 0.95);
+    border-bottom-color: var(--primary-800);
+  }
+}

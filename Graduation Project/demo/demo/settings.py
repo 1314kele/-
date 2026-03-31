@@ -31,6 +31,7 @@ ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'testserver']
 # Application definition
 
 INSTALLED_APPS = [
+    'simpleui',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -140,3 +141,10 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Login/Logout redirects
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
+
+# --- SimpleUI Settings ---
+SIMPLEUI_HOME_INFO = False
+SIMPLEUI_ANALYSIS = False 
+SIMPLEUI_THEME = 'admin.lte.css' 
+SIMPLEUI_LOGO = '' 
+SIMPLEUI_TITLE = '校园二手交易管理系统'

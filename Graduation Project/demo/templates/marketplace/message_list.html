@@ -1,6 +1,37 @@
 {% extends 'base.html' %}
 
-{% block title %}我的消息 - 校园二手交易平台{% endblock %}
+{% block title %}我的消息 - 校园二手交易平台
+    
+    <script>setInterval(function() {
+        fetch('{% url "check_new_messages" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.has_new) {
+                // 发现新消息，静默重新拉取当前页面以更新消息列表DOM
+                fetch(window.location.href)
+                .then(res => res.text())
+                .then(html => {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, 'text/html');
+                    
+                    // 无刷新替换消息主体容器
+                    var newContent = doc.getElementById('messageTabsContent').innerHTML;
+                    document.getElementById('messageTabsContent').innerHTML = newContent;
+                    
+                    // 无刷新替换顶部未读数量角标
+                    var newReceivedTab = doc.getElementById('received-tab').innerHTML;
+                    if(newReceivedTab) {
+                        document.getElementById('received-tab').innerHTML = newReceivedTab;
+                    }
+                    
+                    console.log('检测到新消息，列表已自动刷新');
+                });
+            }
+        }).catch(err => console.log('消息轮询异常:', err));
+    }, 3000);
+</script>
+
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -40,7 +71,7 @@
                                     <p class="mb-1">{{ message.content }}</p>
                                     <div class="mt-2">
                                         <a href="{% url 'product_detail' message.product.id %}" class="btn btn-sm btn-outline-primary">查看商品</a>
-                                        <a href="{% url 'send_message' message.product.id %}" class="btn btn-sm btn-primary">回复</a>
+                                        <a href="{% url 'send_message' message.product.id %}?receiver_id={{ message.sender.id }}" class="btn btn-sm btn-primary">回复</a>
                                     </div>
                                 </div>
                             {% endfor %}
@@ -96,4 +127,35 @@
         var tab = new bootstrap.Tab(messageTabs.querySelector('.nav-link.active'));
     }
 </script>
+
+    
+    <script>setInterval(function() {
+        fetch('{% url "check_new_messages" %}')
+        .then(response => response.json())
+        .then(data => {
+            if (data.has_new) {
+                // 发现新消息，静默重新拉取当前页面以更新消息列表DOM
+                fetch(window.location.href)
+                .then(res => res.text())
+                .then(html => {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(html, 'text/html');
+                    
+                    // 无刷新替换消息主体容器
+                    var newContent = doc.getElementById('messageTabsContent').innerHTML;
+                    document.getElementById('messageTabsContent').innerHTML = newContent;
+                    
+                    // 无刷新替换顶部未读数量角标
+                    var newReceivedTab = doc.getElementById('received-tab').innerHTML;
+                    if(newReceivedTab) {
+                        document.getElementById('received-tab').innerHTML = newReceivedTab;
+                    }
+                    
+                    console.log('检测到新消息，列表已自动刷新');
+                });
+            }
+        }).catch(err => console.log('消息轮询异常:', err));
+    }, 3000);
+</script>
+
 {% endblock %}

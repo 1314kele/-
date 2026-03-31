@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+﻿{% extends 'base.html' %}
 
 {% block title %}用户注册 - 校园二手交易平台{% endblock %}
 
@@ -12,7 +12,7 @@
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
-                    
+
                     {% if form.errors %}
                     <div class="alert alert-danger">
                         <strong>注册失败，请修正以下错误：</strong>
@@ -25,13 +25,19 @@
                         </ul>
                     </div>
                     {% endif %}
-                    
+
                     <div class="mb-3">
                         <label for="{{ form.username.id_for_label }}" class="form-label">用户名</label>
                         {{ form.username }}
                         <div class="form-text">请输入您的用户名</div>
                     </div>
                     
+                    <div class="mb-3">
+                        <label for="id_email" class="form-label">校园邮箱 <span class="text-danger">*</span></label>
+                        <input type="email" name="email" class="form-control" id="id_email" placeholder="格式：学号@ncjti.edu.cn" required>
+                        <div class="form-text text-danger fw-bold" style="color: #d9534f;">必须使用校园邮箱注册</div>
+                    </div>
+
                     <div class="mb-3">
                         <label for="{{ form.password1.id_for_label }}" class="form-label">密码</label>
                         {{ form.password1 }}
@@ -44,13 +50,13 @@
                             </ul>
                         </div>
                     </div>
-                    
+
                     <div class="mb-3">
                         <label for="{{ form.password2.id_for_label }}" class="form-label">确认密码</label>
                         {{ form.password2 }}
                         <div class="form-text">请再次输入密码以确认</div>
                     </div>
-                    
+
                     <div class="d-grid gap-2">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-user-plus"></i> 注册
@@ -62,7 +68,7 @@
                 </form>
             </div>
         </div>
-        
+
         <div class="card mt-3">
             <div class="card-body text-center">
                 <h5>注册后您可以：</h5>
@@ -76,4 +82,31 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var form = document.querySelector('form');
+    var emailInput = document.getElementById('id_email');
+    
+    if (form && emailInput) {
+        form.addEventListener('submit', function(e) {
+            var email = emailInput.value.trim();
+            var emailRegex = /^[a-zA-Z0-9_.-]+@ncjti\.edu\.cn$/;
+            
+            if (!emailRegex.test(email)) {
+                e.preventDefault();
+                alert('【格式错误】\\n注册请务必提供您的校园邮箱！\\n格式要求：学号@ncjti.edu.cn');
+                emailInput.focus();
+                emailInput.style.border = '2px solid #d9534f';
+                emailInput.style.boxShadow = '0 0 5px rgba(217, 83, 79, 0.5)';
+            }
+        });
+
+        emailInput.addEventListener('input', function() {
+            this.style.border = '';
+            this.style.boxShadow = '';
+        });
+    }
+});
+</script>
 {% endblock %}

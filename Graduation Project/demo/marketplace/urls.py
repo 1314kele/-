@@ -20,6 +20,7 @@ urlpatterns = [
     # 消息功能
     path('products/<int:product_id>/message/', views.send_message, name='send_message'),
     path('messages/', views.message_list, name='message_list'),
+    path('api/messages/check/', views.check_new_messages, name='check_new_messages'),
     
     # 评价功能
     path('products/<int:product_id>/review/', views.add_review, name='add_review'),

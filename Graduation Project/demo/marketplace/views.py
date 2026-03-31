@@ -222,19 +222,32 @@ def favorite_list(request):
 def send_message(request, product_id):
     """发送消息视图"""
     product = get_object_or_404(Product, id=product_id)
+    
+    # 支持通过URL参数传入特定的接收者（用于卖家回复买家）
+    receiver_id = request.GET.get('receiver_id')
+    if receiver_id:
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        receiver = get_object_or_404(User, id=receiver_id)
+    else:
+        receiver = product.seller
+
     if request.method == 'POST':
         form = MessageForm(request.POST)
         if form.is_valid():
             message = form.save(commit=False)
             message.sender = request.user
-            message.receiver = product.seller
+            message.receiver = receiver
             message.product = product
             message.save()
             messages.success(request, '消息发送成功！')
+            # 如果是从消息列表过来的回复，发完跳回消息列表
+            if receiver_id:
+                return redirect('message_list')
             return redirect('product_detail', product_id=product.id)
     else:
         form = MessageForm()
-    return render(request, 'marketplace/send_message.html', {'form': form, 'product': product})
+    return render(request, 'marketplace/send_message.html', {'form': form, 'product': product, 'receiver': receiver})
 
 # 消息列表
 @login_required
@@ -1230,3 +1243,8 @@ def get_statistics_data(request):
     }
     
     return JsonResponse(data)
+
+@login_required
+def check_new_messages(request):
+    count = Message.objects.filter(receiver=request.user, is_read=False).count()
+    return JsonResponse({'has_new': count > 0, 'count': count})

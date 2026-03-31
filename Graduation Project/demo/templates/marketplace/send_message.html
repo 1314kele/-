@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}联系卖家 - {{ product.title }}{% endblock %}
+{% block title %}{% if receiver and receiver != product.seller %}回复 {{ receiver.username }} - {{ product.title }}{% else %}联系卖家 - {{ product.title }}{% endif %}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -8,7 +8,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header">
-                    <h4 class="mb-0">联系卖家</h4>
+                    <h4 class="mb-0">{% if receiver and receiver != product.seller %}发消息给 {{ receiver.username }}{% else %}联系卖家{% endif %}</h4>
                 </div>
                 <div class="card-body">
                     <!-- 商品信息 -->
@@ -25,18 +25,18 @@
                             <div>
                                 <h6 class="mb-1">{{ product.title }}</h6>
                                 <p class="text-primary mb-1">¥{{ product.price }}</p>
-                                <small class="text-muted">卖家：{{ product.seller.username }}</small>
+                                <small class="text-muted">发送至：{% if receiver %}{{ receiver.username }}{% else %}{{ product.seller.username }}{% endif %}</small>
                             </div>
                         </div>
                     </div>
                     
                     <!-- 消息表单 -->
-                    <form method="post">
+                    <form method="post" action="{% if receiver %}?receiver_id={{ receiver.id }}{% endif %}">
                         {% csrf_token %}
                         
                         <div class="mb-3">
                             <label for="id_content" class="form-label">消息内容</label>
-                            <textarea name="content" class="form-control" id="id_content" rows="6" placeholder="请输入您想对卖家说的话..." required>{{ form.content.value|default:'' }}</textarea>
+                            <textarea name="content" class="form-control" id="id_content" rows="6" placeholder="请输入消息内容..." required>{{ form.content.value|default:'' }}</textarea>
                             {% if form.content.errors %}
                                 <div class="invalid-feedback d-block">
                                     {{ form.content.errors }}
